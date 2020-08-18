@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	projectID     string = "brave-night-121210"
-	gcpConfigFile        = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS") //Get GCP access-token from doctl config files
+	projectID     = os.Getenv("GOOGLE_PROJECTID")
+	gcpConfigFile = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS") //Get GCP access-token from doctl config files
 )
 
 //GetGCPIPs - List of compute addresses
