@@ -16,7 +16,7 @@ import (
 func CheckIPBaselineChange(provider *cloudprovider.Provider, outliers chan []string) {
 	sips, err := data.GetIPSByProvider(provider.IPKey) //Get stored IP Data from memcache
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err) //Need to determine cache miss
 	} else if len(sips) == 0 { //if there is no IP Data Store new IP Data
 		log.Printf("IP Baseline for %s doesnt exist.", provider.IPKey)
 		data.StoreIPSByProvider(provider) //Store the new IP Data

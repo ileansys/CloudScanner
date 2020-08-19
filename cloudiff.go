@@ -4,6 +4,8 @@ import (
 	"log"
 	"sync"
 
+	"github.com/Ullaakut/nmap"
+
 	"ileansys.com/cloudiff/baseliner"
 	"ileansys.com/cloudiff/cloudprovider"
 	"ileansys.com/cloudiff/data"
@@ -33,10 +35,11 @@ func main() {
 	close(outliers)
 	close(results)
 
-	wg.Add(1)
-	go updateIPBaselineData(&do, &wg) //update DO baseline
-	wg.Add(1)
-	go updateIPBaselineData(&aws, &wg) //update AWS IP baseline
+	//wg.Add(1)
+	//go updateIPBaselineData(&do, &wg) //update DO baseline
+	//wg.Add(1)
+	//go updateIPBaselineData(&aws, &wg) //update AWS IP baseline
+	//wg.Wait()
 }
 
 func checkIPChanges(provider *cloudprovider.Provider, wg *sync.WaitGroup, outliers chan []string) {
@@ -60,7 +63,25 @@ func scanOutliers(wg *sync.WaitGroup, outliers chan []string, results chan []byt
 
 func processScanResults(wg *sync.WaitGroup, results chan []byte) {
 	defer wg.Done()
+	totalNmapResults := make([]byte, 0)
+
 	for result := range results {
-		log.Println(string(result))
+		totalNmapResults = append(totalNmapResults, result...)
+	}
+
+	nmapResult, err := nmap.Parse(totalNmapResults)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, host := range nmapResult.Hosts {
+		if len(host.Ports) == 0 || len(host.Addresses) == 0 {
+			continue
+		}
+
+		log.Printf("Host %q:\n", host.Addresses[0])
+
+		for _, port := range host.Ports {
+			log.Printf("\tPort %d/%s %s %s\n", port.ID, port.Protocol, port.State, port.Service.Name)
+		}
 	}
 }

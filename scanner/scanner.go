@@ -17,8 +17,6 @@ func ServiceScan(ipList []string, wg *sync.WaitGroup, results chan []byte) {
 
 	s, err := nmap.NewScanner(
 		nmap.WithTargets(ipList...),
-		nmap.WithMostCommonPorts(5000),
-		nmap.WithAggressiveScan(),
 		nmap.WithOpenOnly(),
 	)
 	if err != nil {
