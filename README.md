@@ -15,6 +15,9 @@
 ### Data Stores
 - memcached 
 
+### Wrapped Tools
+- nmap
+
 ### Roadmap Features
 - Archive IP Baseline Data in Persistent Database
 - Store, Track, Archive Host Service Baselines
