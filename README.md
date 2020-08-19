@@ -1,6 +1,8 @@
 # Cloudiff
 ============================================================================================================
 
+A cloud security and compliance change tracker.
+
 ### Current Features
 - Retrieve IPs from AWS, GCP and DigitalOcean Cloud SDKs for compute resources
 - Detect new public IPs (outliers) from a previous IP baseline across AWS, GCP and Digital Ocean 
