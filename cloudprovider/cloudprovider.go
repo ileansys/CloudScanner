@@ -22,6 +22,8 @@ func (p Provider) Init() Provider {
 		p.IPs = getDOIPs()
 	case "GCP":
 		p.IPs = getGCPIPs()
+	case "TEST":
+		p.IPs = []string{"127.0.0.1", "192.168.0.1", "192.168.100.1"}
 	}
 	return p
 }

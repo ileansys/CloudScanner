@@ -18,7 +18,9 @@ func ServiceScan(ipList []string, wg *sync.WaitGroup, results chan []byte) {
 	s, err := nmap.NewScanner(
 		nmap.WithTargets(ipList...),
 		nmap.WithOpenOnly(),
+		nmap.WithServiceInfo(),
 	)
+
 	if err != nil {
 		log.Fatalf("unable to create nmap scanner: %v", err)
 	}
@@ -42,6 +44,7 @@ func ServiceScan(ipList []string, wg *sync.WaitGroup, results chan []byte) {
 			///resultBytes = append(resultBytes, stdout.Bytes()...)
 			results <- stdout.Bytes()
 		}
+		close(results) //close results channel after streaming scan results
 	}()
 
 	// Goroutine to watch for stderr and print to screen. Additionally it stores

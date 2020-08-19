@@ -16,8 +16,12 @@ const (
 	AWSIPsKey
 	//DOIPsKey - memcached key for getting DO IPs
 	DOIPsKey
+	//TESTIPsKey - memcached key for testing IPs
+	TESTIPsKey
+	//NmapResultsKey - memcached key for the latest nmap results
+	NmapResultsKey
 )
 
 func (ip IPBaseline) String() string {
-	return [...]string{"GCPIPCount", "AWSIPCount", "DOIPCount", "GCPIPs", "AWSIPs", "DOIPs"}[ip]
+	return [...]string{"GCPIPCount", "AWSIPCount", "DOIPCount", "GCPIPs", "AWSIPs", "DOIPs", "TESTIPs", "NmapResults"}[ip]
 }

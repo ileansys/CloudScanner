@@ -40,8 +40,30 @@ func GetIPSByProvider(cloudProviderIPsKey string) ([]string, error) {
 	sliceOfIPs := make([]string, 0)
 	err = json.Unmarshal(ips.Value, &sliceOfIPs)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	return sliceOfIPs, nil
+}
+
+//StoreNmapScanResults - Store Nmap Scan results
+func StoreNmapScanResults(nmapResultsKey string, scanResults []byte) {
+	mc := memcache.New(memcachedServer)
+
+	merr := mc.Set(&memcache.Item{Key: nmapResultsKey, Value: scanResults}) //Store Marshalled Slice of IPs
+	if merr != nil {
+		log.Fatal(merr)
+	}
+}
+
+//GetNmapScanResults - Retrieve Nmap Scan results
+func GetNmapScanResults(nmapResultsKey string) ([]byte, error) {
+	mc := memcache.New(memcachedServer)
+
+	results, err := mc.Get(nmapResultsKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return results.Value, nil
 }

@@ -9,5 +9,6 @@ require (
 	github.com/digitalocean/godo v1.42.1
 	github.com/scylladb/go-set v1.0.2
 	google.golang.org/api v0.30.0
+	gopkg.in/vmihailenco/msgpack.v2 v2.9.1
 	gopkg.in/yaml.v2 v2.3.0
 )
