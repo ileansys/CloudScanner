@@ -27,3 +27,4 @@
 - Ansible CIS Remediation Workflows
 - Integrate with more cloud providers e.g. Azure, Oracle, Linode...
 - Change Notifications and Alerts
+- Gather Threat Intelligence about Public IPs on Platforms like Shodan, PassiveTotal, VirusTotal e.t.c
