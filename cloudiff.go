@@ -77,7 +77,7 @@ func scanOutliers(wg *sync.WaitGroup, outliers chan cloudprovider.Outlier, count
 	}
 }
 
-//numberOfScanners is equal numberOfScanners
+//numberOfScanners is equal numberOfProviders
 func trackScanners(numberOfScanners int, outliers chan cloudprovider.Outlier, counter chan int) {
 	c := 0
 	for {
