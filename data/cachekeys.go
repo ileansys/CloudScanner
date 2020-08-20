@@ -25,6 +25,7 @@ const (
 	//GCPNmapResultsKey - memcached key for the latest nmap results for GCP
 	GCPNmapResultsKey
 	//LocalHostNmapResults - memcached key for localhost nmap results
+	LocalHostNmapResults
 )
 
 func (ip IPBaseline) String() string {

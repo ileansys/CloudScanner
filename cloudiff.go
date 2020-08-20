@@ -11,54 +11,47 @@ import (
 )
 
 var (
-	numberOfProviders = 2
+	numberOfProviders = 3
 )
 
 func main() {
 
 	var wg sync.WaitGroup
-	outliers := make(chan cloudprovider.Outlier, numberOfProviders)
+	var providers = []cloudprovider.Provider{ //some provider properties will be pre-configured/marshalled on yaml later...
+		cloudprovider.Provider{
+			ProviderName: "DO",
+			IPKey:        data.DOIPsKey.String(),
+			ResultsKey:   data.DONmapResultsKey.String(),
+		}.Init(),
+		cloudprovider.Provider{
+			ProviderName: "AWS",
+			IPKey:        data.AWSIPsKey.String(),
+			ResultsKey:   data.AWSNmapResultsKey.String(),
+		}.Init(),
+		cloudprovider.Provider{
+			ProviderName: "GCP",
+			IPKey:        data.GCPIPsKey.String(),
+			ResultsKey:   data.GCPNmapResultsKey.String(),
+		}.Init(),
+	}
+
+	outliers := make(chan cloudprovider.Outlier, len(providers)) //size channel based on number of providers
 	counter := make(chan int)
 
-	do := cloudprovider.Provider{
-		ProviderName: "DO",
-		IPKey:        data.DOIPsKey.String(),
-		ResultsKey:   data.DONmapResultsKey.String(),
-	}.Init()
-
-	aws := cloudprovider.Provider{
-		ProviderName: "AWS",
-		IPKey:        data.AWSIPsKey.String(),
-		ResultsKey:   data.AWSNmapResultsKey.String(),
-	}.Init()
-
-	go func() {
-		c := 0
-		for {
-			select {
-			case i := <-counter:
-				c = c + i
-				log.Printf("Scanner %d completed...", c)
-				if c == numberOfProviders {
-					close(outliers)
-					break
-				}
-			}
-		}
-	}()
-
+	go trackScanners(outliers, counter)
 	wg.Add(1)
 	go scanOutliers(&wg, outliers, counter)
-	wg.Add(1)
-	go checkIPChanges(&aws, &wg, outliers)
-	wg.Add(1)
-	go checkIPChanges(&do, &wg, outliers)
+	for _, p := range providers {
+		wg.Add(1)
+		go checkIPChanges(p, &wg, outliers)
+	}
 	wg.Wait()
+
 }
 
-func checkIPChanges(provider *cloudprovider.Provider, wg *sync.WaitGroup, outliers chan cloudprovider.Outlier) {
+func checkIPChanges(provider cloudprovider.Provider, wg *sync.WaitGroup, outliers chan cloudprovider.Outlier) {
 	defer wg.Done()
-	baseliner.CheckIPBaselineChange(provider, outliers)
+	baseliner.CheckIPBaselineChange(&provider, outliers)
 }
 
 func updateIPBaselineData(provider *cloudprovider.Provider, wg *sync.WaitGroup) {
@@ -69,7 +62,23 @@ func updateIPBaselineData(provider *cloudprovider.Provider, wg *sync.WaitGroup) 
 
 func scanOutliers(wg *sync.WaitGroup, outliers chan cloudprovider.Outlier, counter chan int) {
 	defer wg.Done()
+
 	for outlier := range outliers {
 		go scanner.ServiceScan(outlier.ResultsKey, outlier.IPs, counter)
+	}
+}
+
+func trackScanners(outliers chan cloudprovider.Outlier, counter chan int) {
+	c := 0
+	for {
+		select {
+		case i := <-counter:
+			c = c + i
+			log.Printf("Scanner #%d completed...", c)
+			if c == numberOfProviders {
+				close(outliers)
+				break
+			}
+		}
 	}
 }
