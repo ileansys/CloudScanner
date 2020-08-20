@@ -11,29 +11,52 @@ import (
 )
 
 var (
-	numberOfProviders = 1
+	numberOfProviders = 2
 )
 
 func main() {
 
 	var wg sync.WaitGroup
-	outliers := make(chan []string, numberOfProviders)
-	results := make(chan []byte)
+	outliers := make(chan cloudprovider.Outlier, numberOfProviders)
+	counter := make(chan int)
 
-	//aws := cloudprovider.Provider{ProviderName: "AWS", IPKey: data.AWSIPsKey.String()}.Init() //Create AWS Provider
-	do := cloudprovider.Provider{ProviderName: "DO", IPKey: data.DOIPsKey.String()}.Init() //Create DO Provider
-	//gcp := cloudprovider.Provider{ProviderName: "GCP", IPKey: data.DOIPsKey.String()}.Init()  //Create DO Provider
+	do := cloudprovider.Provider{
+		ProviderName: "DO",
+		IPKey:        data.DOIPsKey.String(),
+		ResultsKey:   data.DONmapResultsKey.String(),
+	}.Init()
+
+	aws := cloudprovider.Provider{
+		ProviderName: "AWS",
+		IPKey:        data.AWSIPsKey.String(),
+		ResultsKey:   data.AWSNmapResultsKey.String(),
+	}.Init()
+
+	go func() {
+		c := 0
+		for {
+			select {
+			case i := <-counter:
+				c = c + i
+				log.Printf("Scanner %d completed...", c)
+				if c == numberOfProviders {
+					close(outliers)
+					break
+				}
+			}
+		}
+	}()
 
 	wg.Add(1)
-	go processScanResults(&wg, results)
+	go scanOutliers(&wg, outliers, counter)
+	wg.Add(1)
+	go checkIPChanges(&aws, &wg, outliers)
 	wg.Add(1)
 	go checkIPChanges(&do, &wg, outliers)
-	wg.Add(1)
-	go scanOutliers(&wg, outliers, results)
 	wg.Wait()
 }
 
-func checkIPChanges(provider *cloudprovider.Provider, wg *sync.WaitGroup, outliers chan []string) {
+func checkIPChanges(provider *cloudprovider.Provider, wg *sync.WaitGroup, outliers chan cloudprovider.Outlier) {
 	defer wg.Done()
 	baseliner.CheckIPBaselineChange(provider, outliers)
 }
@@ -44,20 +67,9 @@ func updateIPBaselineData(provider *cloudprovider.Provider, wg *sync.WaitGroup) 
 	data.StoreIPSByProvider(provider)
 }
 
-func scanOutliers(wg *sync.WaitGroup, outliers chan []string, results chan []byte) {
+func scanOutliers(wg *sync.WaitGroup, outliers chan cloudprovider.Outlier, counter chan int) {
 	defer wg.Done()
 	for outlier := range outliers {
-		wg.Add(1)
-		go scanner.ServiceScan(outlier, wg, results)
+		go scanner.ServiceScan(outlier.ResultsKey, outlier.IPs, counter)
 	}
-}
-
-func processScanResults(wg *sync.WaitGroup, results chan []byte) {
-	defer wg.Done()
-	totalNmapResults := make([]byte, 0)
-	for result := range results {
-		log.Println(string(result))
-		totalNmapResults = append(totalNmapResults, result...)
-	}
-	//data.StoreNmapScanResults(data.NmapResultsKey.String(), totalNmapResults)
 }

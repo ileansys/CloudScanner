@@ -6,10 +6,17 @@ type CloudProvider interface {
 	GetIPs() []string //Get a slice of IPs
 }
 
+//Outlier - set of new IPs found after a scan
+type Outlier struct {
+	ResultsKey string
+	IPs        []string
+}
+
 //Provider properties
 type Provider struct {
 	ProviderName string
 	IPKey        string
+	ResultsKey   string
 	IPs          []string
 }
 

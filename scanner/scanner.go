@@ -2,23 +2,22 @@ package scanner
 
 import (
 	"log"
-	"sync"
 
 	"github.com/Ullaakut/nmap"
+	"ileansys.com/cloudiff/data"
 )
 
 //ServiceScan - Conduct a Service Scan
-func ServiceScan(ipList []string, wg *sync.WaitGroup, results chan []byte) {
-	defer wg.Done()
-	log.Printf("Scanning outliers... %s", ipList)
+func ServiceScan(providerResultsKey string, ipList []string, counter chan int) {
 	var (
-		errorBytes []byte
+		resultBytes []byte
+		errorBytes  []byte
 	)
+	log.Printf("Scanning outliers... %s", ipList)
 
-	s, err := nmap.NewScanner(
+	scanner, err := nmap.NewScanner(
 		nmap.WithTargets(ipList...),
-		nmap.WithOpenOnly(),
-		nmap.WithServiceInfo(),
+		nmap.WithPorts("443"),
 	)
 
 	if err != nil {
@@ -26,59 +25,38 @@ func ServiceScan(ipList []string, wg *sync.WaitGroup, results chan []byte) {
 	}
 
 	// Executes asynchronously, allowing results to be streamed in real time.
-	if err := s.RunAsync(); err != nil {
+	if err := scanner.RunAsync(); err != nil {
 		panic(err)
 	}
 
 	// Connect to stdout of scanner.
-	stdout := s.GetStdout()
+	stdout := scanner.GetStdout()
 
 	// Connect to stderr of scanner.
-	stderr := s.GetStderr()
+	stderr := scanner.GetStderr()
 
-	// Goroutine to watch for stdout and print to screen. Additionally it stores
-	// the bytes intoa variable for processiing later.
-	go func() {
-		for stdout.Scan() {
-			//log.Println(stdout.Text())
-			///resultBytes = append(resultBytes, stdout.Bytes()...)
-			results <- stdout.Bytes()
-		}
-		close(results) //close results channel after streaming scan results
-	}()
+	// Goroutine to watch for stdout and print to screen.
+	for stdout.Scan() {
+		log.Println(stdout.Text())
+		resultBytes = append(resultBytes, stdout.Bytes()...)
+	}
 
-	// Goroutine to watch for stderr and print to screen. Additionally it stores
-	// the bytes intoa variable for processiing later.
-	go func() {
-		for stderr.Scan() {
-			errorBytes = append(errorBytes, stderr.Bytes()...)
-		}
-	}()
+	// Goroutine to watch for stderr and print to screen.
+	for stderr.Scan() {
+		errorBytes = append(errorBytes, stderr.Bytes()...)
+	}
 
-	// Blocks main until the scan has completed.
-	if err := s.Wait(); err != nil {
+	// Blocks until the scan has completed.
+	if err := scanner.Wait(); err != nil {
 		panic(err)
 	}
 
-	// Parsing the results into corresponding structs.
-	// result, err := nmap.Parse(resultBytes)
+	log.Printf("Storing scan results using %s ...", providerResultsKey)
+	err = data.StoreNmapScanResults(providerResultsKey, resultBytes)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// Parsing the results into the NmapError slice of our nmap Struct.
-	// result.NmapErrors = strings.Split(string(errorBytes), "\n")
-	// if err != nil {
-	// 	panic(err)
-	// }
+	counter <- 1
 
-	// // Use the results to print an example output
-	// for _, host := range result.Hosts {
-	// 	if len(host.Ports) == 0 || len(host.Addresses) == 0 {
-	// 		continue
-	// 	}
-
-	// 	log.Printf("Host %q:\n", host.Addresses[0])
-
-	// 	for _, port := range host.Ports {
-	// 		log.Printf("\tPort %d/%s %s %s\n", port.ID, port.Protocol, port.State, port.Service.Name)
-	// 	}
-	// }
 }

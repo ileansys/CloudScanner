@@ -12,43 +12,48 @@ import (
 	"github.com/scylladb/go-set/strset"
 )
 
+var (
+	localhost = cloudprovider.Outlier{ResultsKey: "LocalHostNmapResults", IPs: []string{"0.0.0.0"}}
+)
+
 //CheckIPBaselineChange - check for IP Baseline Change and Send changes to outlier channel
-func CheckIPBaselineChange(provider *cloudprovider.Provider, outliers chan []string) {
-	sips, err := data.GetIPSByProvider(provider.IPKey) //Get stored IP Data from memcache
+func CheckIPBaselineChange(provider *cloudprovider.Provider, outliers chan cloudprovider.Outlier) {
+	sips, err := data.GetIPSByProvider(provider.IPKey)                                     //stored IPs Data from memcache
+	nips := cloudprovider.Outlier{ResultsKey: provider.ResultsKey, IPs: provider.GetIPs()} //new IPs
 	if err != nil {
-		miss := err.Error() == "memcache: cache miss" //Find cache miss
+		miss := err.Error() == "memcache: cache miss" //If there is a cache miss
 		if miss {
-			data.StoreIPSByProvider(provider) //Store the new IP data
+			data.StoreIPSByProvider(provider) //Store the new IP baseline data
+			outliers <- nips                  //Scan the new set of IPs in the baseline
 		} else {
 			log.Fatal(err)
+			outliers <- localhost //Scan myself :-). Do Nothing
 		}
-	}
-
-	if len(sips) == 0 { //if there is no IP Data Store new IP Data
-		log.Printf("IP Baseline for %s doesnt exist.", provider.IPKey)
+	} else if len(sips) == 0 { //if there is empty IP Data for a provider
+		log.Printf("IP Baseline for %s doesnt exist.", provider.ProviderName)
 		data.StoreIPSByProvider(provider) //Store the new IP Data
+		outliers <- nips                  //Scan the new set of IPs in the baseline
 	} else {
 		compareTwoIPSets(sips, provider, outliers) //Compare Memcached IP Data with newly fetched IP Data
 	}
-	close(outliers)
 }
 
-func compareTwoIPSets(currentIPBaseline []string, provider *cloudprovider.Provider, outliers chan []string) {
+func compareTwoIPSets(currentIPBaseline []string, provider *cloudprovider.Provider, outliers chan cloudprovider.Outlier) {
 	sort.Strings(currentIPBaseline)
 	sort.Strings(provider.GetIPs())
 	b := reflect.DeepEqual(currentIPBaseline, provider.GetIPs())
 	if b == true {
 		log.Printf("IP Baseline for %s has not changed. \n", provider.ProviderName)
-		//time.Sleep()
+		outliers <- localhost //Scan myself :-). Do Nothing
 	} else {
-		getIPBaselineOutliers(currentIPBaseline, provider.GetIPs(), outliers)
+		getIPBaselineOutliers(currentIPBaseline, provider.GetIPs(), provider.ResultsKey, outliers)
 		log.Printf("IP Baseline for %s has changed. \n", provider.ProviderName)
 	}
 }
 
-func getIPBaselineOutliers(currentIPBaseline []string, newIPs []string, outliers chan []string) {
+func getIPBaselineOutliers(currentIPBaseline []string, newIPs []string, providerResultKey string, outliers chan cloudprovider.Outlier) {
 	ipSet1 := strset.New(currentIPBaseline...)
 	ipSet2 := strset.New(newIPs...)
 	ipSet3 := strset.SymmetricDifference(ipSet1, ipSet2)
-	outliers <- ipSet3.List()
+	outliers <- cloudprovider.Outlier{ResultsKey: providerResultKey, IPs: ipSet3.List()} //Compare IP Baselines
 }

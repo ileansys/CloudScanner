@@ -14,7 +14,7 @@ var (
 )
 
 //StoreIPSByProvider - Store IPs based on cloud provider
-func StoreIPSByProvider(provider *cloudprovider.Provider) {
+func StoreIPSByProvider(provider *cloudprovider.Provider) error {
 	mc := memcache.New(memcachedServer)
 
 	jsonIPSByteArray, err := json.Marshal(provider.GetIPs()) //Marshall slice of IPs into JSON
@@ -25,7 +25,9 @@ func StoreIPSByProvider(provider *cloudprovider.Provider) {
 	merr := mc.Set(&memcache.Item{Key: provider.IPKey, Value: jsonIPSByteArray}) //Store Marshalled Slice of IPs
 	if merr != nil {
 		log.Fatal(merr)
+		return merr
 	}
+	return nil
 }
 
 //GetIPSByProvider - Get IPs for a specific cloud provider
@@ -47,13 +49,15 @@ func GetIPSByProvider(cloudProviderIPsKey string) ([]string, error) {
 }
 
 //StoreNmapScanResults - Store Nmap Scan results
-func StoreNmapScanResults(nmapResultsKey string, scanResults []byte) {
+func StoreNmapScanResults(nmapResultsKey string, scanResults []byte) error {
 	mc := memcache.New(memcachedServer)
 
 	merr := mc.Set(&memcache.Item{Key: nmapResultsKey, Value: scanResults}) //Store Marshalled Slice of IPs
 	if merr != nil {
 		log.Fatal(merr)
+		return merr
 	}
+	return nil
 }
 
 //GetNmapScanResults - Retrieve Nmap Scan results
