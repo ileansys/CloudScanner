@@ -10,14 +10,13 @@ import (
 	"ileansys.com/cloudiff/scanner"
 )
 
-var (
-	numberOfProviders = 3
-)
-
 func main() {
 
-	var wg sync.WaitGroup
-	var providers = []cloudprovider.Provider{ //some provider properties will be pre-configured/marshalled on yaml later...
+	var swg sync.WaitGroup //scan and baseliner waitgroup
+	var uwg sync.WaitGroup //update baseline waitgroup
+
+	//some provider properties to be pre-configured/marshalled on yaml later...
+	var providers = []cloudprovider.Provider{
 		cloudprovider.Provider{
 			ProviderName: "DO",
 			IPKey:        data.DOIPsKey.String(),
@@ -35,17 +34,28 @@ func main() {
 		}.Init(),
 	}
 
-	outliers := make(chan cloudprovider.Outlier, len(providers)) //size channel based on number of providers
+	//channel size based on number of providers
+	outliers := make(chan cloudprovider.Outlier, len(providers))
 	counter := make(chan int)
 
-	go trackScanners(outliers, counter)
-	wg.Add(1)
-	go scanOutliers(&wg, outliers, counter)
+	//track scanners
+	go trackScanners(len(providers), outliers, counter)
+	swg.Add(1)
+
+	//scan outliers sent from baseliner
+	go scanOutliers(&swg, outliers, counter)
 	for _, p := range providers {
-		wg.Add(1)
-		go checkIPChanges(p, &wg, outliers)
+		swg.Add(1)
+		go checkIPChanges(p, &swg, outliers)
 	}
-	wg.Wait()
+	swg.Wait()
+
+	//update IP baseline
+	for _, p := range providers {
+		uwg.Add(1)
+		go updateIPBaselineData(p, &uwg)
+	}
+	uwg.Wait()
 
 }
 
@@ -54,28 +64,28 @@ func checkIPChanges(provider cloudprovider.Provider, wg *sync.WaitGroup, outlier
 	baseliner.CheckIPBaselineChange(&provider, outliers)
 }
 
-func updateIPBaselineData(provider *cloudprovider.Provider, wg *sync.WaitGroup) {
+func updateIPBaselineData(provider cloudprovider.Provider, wg *sync.WaitGroup) {
 	defer wg.Done()
 	log.Printf("Updating %s baseline...", provider.ProviderName)
-	data.StoreIPSByProvider(provider)
+	data.StoreIPSByProvider(&provider)
 }
 
 func scanOutliers(wg *sync.WaitGroup, outliers chan cloudprovider.Outlier, counter chan int) {
 	defer wg.Done()
-
 	for outlier := range outliers {
 		go scanner.ServiceScan(outlier.ResultsKey, outlier.IPs, counter)
 	}
 }
 
-func trackScanners(outliers chan cloudprovider.Outlier, counter chan int) {
+//numberOfScanners is equal numberOfScanners
+func trackScanners(numberOfScanners int, outliers chan cloudprovider.Outlier, counter chan int) {
 	c := 0
 	for {
 		select {
 		case i := <-counter:
 			c = c + i
 			log.Printf("Scanner #%d completed...", c)
-			if c == numberOfProviders {
+			if c == numberOfScanners {
 				close(outliers)
 				break
 			}
