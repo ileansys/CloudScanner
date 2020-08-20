@@ -22,11 +22,12 @@ A cloud security and compliance change tracker.
 
 ### Roadmap Features
 - Archive IP Baseline Data in Persistent Database
-- Store, Track, Archive Host Service Baselines
+- Store, Track and Archive Host Service Baselines
 - Customized Schedules and Scan Intervals
 - Integrate with Vulnerability Scanners e.g. Nessus, OpenVAS, 
 - CIS Host and Container/k8s Hardening Inspection with Chef Inspec 
 - Ansible CIS Remediation Workflows
 - Integrate with more cloud providers e.g. Azure, Oracle, Linode...
 - Change Notifications and Alerts
+- Containerization
 - Gather Threat Intelligence about Public IPs on Platforms like Shodan, PassiveTotal, VirusTotal e.t.c
