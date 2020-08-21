@@ -10,6 +10,7 @@ A cloud security and compliance change tracker.
 - Store the new+old IPs as the new baseline
 - Customized Schedules and Scan Intervals (cron)
 - Storing Service Scan Baselines
+- Change Notifications and Alerts
 
 ### Integrations
 - AWS Go SDKs
@@ -30,7 +31,6 @@ A cloud security and compliance change tracker.
 - CIS Host and Container/k8s Hardening Inspection with Chef Inspec 
 - Ansible CIS Remediation Workflows
 - Integrate with more cloud providers e.g. Azure, Oracle, Linode...
-- Change Notifications and Alerts
 - Containerization
 - Interactive Console
 - Gather Threat Intelligence about Public IPs on Platforms like Shodan, PassiveTotal, VirusTotal e.t.c
