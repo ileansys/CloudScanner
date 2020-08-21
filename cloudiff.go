@@ -4,6 +4,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/jasonlvhit/gocron"
 	"ileansys.com/cloudiff/baseliner"
 	"ileansys.com/cloudiff/cloudprovider"
 	"ileansys.com/cloudiff/data"
@@ -11,6 +12,17 @@ import (
 )
 
 func main() {
+	gocron.Every(1).Minute().Do(scan) //scan every 1 minutes
+	// NextRun gets the next running time
+	_, time := gocron.NextRun()
+	log.Printf("Running scan at %v", time)
+
+	//Start all pending jobs
+	<-gocron.Start()
+
+}
+
+func scan() {
 
 	var swg sync.WaitGroup //scan and baseliner waitgroup
 	var uwg sync.WaitGroup //update baseline waitgroup
