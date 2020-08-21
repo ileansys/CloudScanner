@@ -20,6 +20,12 @@ func main() {
 	//Start all pending jobs
 	<-gocron.Start()
 
+	// also, you can create a new scheduler
+	// to run two schedulers concurrently
+	//s := gocron.NewScheduler()
+	//s.Every(3).Seconds().Do(task)
+	//<- s.Start()
+
 }
 
 func scan() {

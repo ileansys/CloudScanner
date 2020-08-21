@@ -3,6 +3,7 @@ package cloudprovider
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -36,18 +37,30 @@ func getAWSIPs() []string {
 	}
 
 	listOfIPAddresses := make([]string, 0)
-	var listOfIPAddresessPerRegion []string
+	ipChannel := make(chan string) //create an IP channel
+	var wg sync.WaitGroup
+
+	go func() {
+		for ip := range ipChannel {
+			listOfIPAddresses = append(listOfIPAddresses, ip) //wait for ip addresses from different regions
+		}
+	}()
+
 	for _, region := range results.Regions {
-		listOfIPAddresessPerRegion = getAWSIPsByRegion(*region.RegionName)
-		listOfIPAddresses = append(listOfIPAddresses, listOfIPAddresessPerRegion...)
+		wg.Add(1)
+		go getAWSIPsByRegion(*region.RegionName, &wg, ipChannel) //get IP from different regions and send them to ip channel
 	}
 
-	return listOfIPAddresses
+	wg.Wait()
+	close(ipChannel) //close ip channel
+
+	return listOfIPAddresses //return the ip addresses
 }
 
 //GetAWSIPsByRegion - Fetch AWS IPs
-func getAWSIPsByRegion(region string) []string {
+func getAWSIPsByRegion(region string, wg *sync.WaitGroup, ipc chan string) {
 
+	defer wg.Done()
 	// Load session from shared config
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(region)},
@@ -55,7 +68,6 @@ func getAWSIPsByRegion(region string) []string {
 	// Create new EC2 client
 	ec2Svc := ec2.New(sess)
 
-	listOfIPAddresses := make([]string, 0)
 	// Call to get detailed information on each instance
 	result, err := ec2Svc.DescribeNetworkInterfaces(nil)
 	if err != nil {
@@ -63,10 +75,9 @@ func getAWSIPsByRegion(region string) []string {
 	} else {
 		for _, networkInterface := range result.NetworkInterfaces {
 			if networkInterface.Association != nil {
-				listOfIPAddresses = append(listOfIPAddresses, *networkInterface.Association.PublicIp)
+				ipc <- *networkInterface.Association.PublicIp //send IPs to IP channel
 			}
 		}
 	}
 
-	return listOfIPAddresses
 }

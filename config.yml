@@ -1,0 +1,12 @@
+- providername: DO
+  ipkey: DOIPs
+  resultskey: DONmapResults
+- providername: AWS
+  ipkey: AWSIPs
+  resultskey: AWSNmapResults
+- providername: GCP
+  ipkey: GCPIPs
+  resultskey: GCPNmapResults
+- schedule: 
+  interval: Daily
+  specificTime: "16:00:00"
