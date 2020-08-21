@@ -17,7 +17,7 @@ func ServiceScan(providerResultsKey string, ipList []string, counter chan int) {
 
 	scanner, err := nmap.NewScanner(
 		nmap.WithTargets(ipList...),
-		nmap.WithPorts("80,443"),
+		nmap.WithPorts("80,443,27017,27018,5432,3306"), ///Check for the Data ;-)
 	)
 
 	if err != nil {
