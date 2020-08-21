@@ -17,7 +17,18 @@ func ServiceScan(providerResultsKey string, ipList []string, counter chan int) {
 
 	scanner, err := nmap.NewScanner(
 		nmap.WithTargets(ipList...),
-		nmap.WithPorts("80,443,27017,27018,5432,3306"), ///Check for the Data ;-)
+		nmap.WithPorts("80,443,27017,27018,5432,3306,6379,6380,22,2222"), ///Check for the Data ;-p
+		// Filter out hosts that don't have any open ports
+		nmap.WithFilterHost(func(h nmap.Host) bool {
+			// Filter out hosts with no open ports.
+			for idx := range h.Ports {
+				if h.Ports[idx].Status() == "open" {
+					return true
+				}
+			}
+
+			return false
+		}),
 	)
 
 	if err != nil {

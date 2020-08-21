@@ -1,9 +1,12 @@
 package baseliner
 
 import (
+	"fmt"
 	"log"
 	"reflect"
 	"sort"
+
+	"ileansys.com/cloudiff/notifier"
 
 	"ileansys.com/cloudiff/cloudprovider"
 
@@ -55,5 +58,9 @@ func getIPBaselineOutliers(currentIPBaseline []string, newIPs []string, provider
 	ipSet1 := strset.New(currentIPBaseline...)
 	ipSet2 := strset.New(newIPs...)
 	ipSet3 := strset.SymmetricDifference(ipSet1, ipSet2)
+
+	//Send email alerts
+	ipSetStrings := fmt.Sprintf("%d IP(s) detected. IP(s): %s", len(ipSet3.List()), ipSet3.List())
+	notifier.Send(ipSetStrings, providerResultKey)
 	outliers <- cloudprovider.Outlier{ResultsKey: providerResultKey, IPs: ipSet3.List()} //Compare IP Baselines
 }

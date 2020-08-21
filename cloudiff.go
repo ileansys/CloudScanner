@@ -12,27 +12,27 @@ import (
 )
 
 func main() {
-	gocron.Every(1).Minute().Do(scan) //scan every 1 minutes
-	// NextRun gets the next running time
-	_, time := gocron.NextRun()
-	log.Printf("Running scan at %v", time)
 
-	//Start all pending jobs
-	<-gocron.Start()
+	//Scan Outliers Scheduler
+	scanOutliersScheduler := gocron.NewScheduler()
+	scanOutliersScheduler.Every(5).Minute().Do(scan)
+	scanOutliersScheduler.Every(12).Minute().Do(update)
+	<-scanOutliersScheduler.Start()
+	_, stime := scanOutliersScheduler.NextRun()
+	log.Printf("Running scan at %v", stime)
 
-	// also, you can create a new scheduler
-	// to run two schedulers concurrently
-	//s := gocron.NewScheduler()
-	//s.Every(3).Seconds().Do(task)
-	//<- s.Start()
+	//Update Baseline Scheduler
+	// updateBaselineScheduler := gocron.NewScheduler()
+	// updateBaselineScheduler.Every(10).Minute().Do(update)
+	// <-updateBaselineScheduler.Start()
+	// _, utime := updateBaselineScheduler.NextRun()
+	// fmt.Printf("Running baseline update at %v", utime)
 
 }
 
 func scan() {
 
 	var swg sync.WaitGroup //scan and baseliner waitgroup
-	var uwg sync.WaitGroup //update baseline waitgroup
-
 	//some provider properties to be pre-configured/marshalled on yaml later...
 	var providers = []cloudprovider.Provider{
 		cloudprovider.Provider{
@@ -68,13 +68,33 @@ func scan() {
 	}
 	swg.Wait()
 
+}
+
+func update() {
+	var uwg sync.WaitGroup //update baseline waitgroup
+	var providers = []cloudprovider.Provider{
+		cloudprovider.Provider{
+			ProviderName: "DO",
+			IPKey:        data.DOIPsKey.String(),
+			ResultsKey:   data.DONmapResultsKey.String(),
+		}.Init(),
+		cloudprovider.Provider{
+			ProviderName: "AWS",
+			IPKey:        data.AWSIPsKey.String(),
+			ResultsKey:   data.AWSNmapResultsKey.String(),
+		}.Init(),
+		cloudprovider.Provider{
+			ProviderName: "GCP",
+			IPKey:        data.GCPIPsKey.String(),
+			ResultsKey:   data.GCPNmapResultsKey.String(),
+		}.Init(),
+	}
 	//update IP baseline
 	for _, p := range providers {
 		uwg.Add(1)
 		go updateIPBaselineData(p, &uwg)
 	}
 	uwg.Wait()
-
 }
 
 func checkIPChanges(provider cloudprovider.Provider, wg *sync.WaitGroup, outliers chan cloudprovider.Outlier) {
