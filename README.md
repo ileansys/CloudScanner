@@ -8,6 +8,8 @@ A cloud security and compliance change tracker.
 - Detect new public IPs (outliers) from a previous IP baseline across AWS, GCP and Digital Ocean 
 - Scan those new IPs to detect services
 - Store the new+old IPs as the new baseline
+- Customized Schedules and Scan Intervals
+- Storing Service Scan Baselines
 
 ### Integrations
 - AWS Go SDKs
@@ -22,8 +24,7 @@ A cloud security and compliance change tracker.
 
 ### Roadmap Features
 - Archive IP Baseline Data in Persistent Database
-- Store, Track and Archive Host Service Baselines
-- Customized Schedules and Scan Intervals
+- Track and Archive Service Scan Baselines
 - Integrate with Vulnerability Scanners e.g. Nessus, OpenVAS, 
 - CIS Host and Container/k8s Hardening Inspection with Chef Inspec 
 - Ansible CIS Remediation Workflows
