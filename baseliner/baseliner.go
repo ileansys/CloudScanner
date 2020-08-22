@@ -11,6 +11,7 @@ import (
 
 	"ileansys.com/cloudiff/data"
 
+	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/scylladb/go-set/strset"
 )
 
@@ -19,14 +20,14 @@ var (
 )
 
 //CheckIPBaselineChange - check for IP Baseline Change and Send changes to outlier channel
-func CheckIPBaselineChange(provider *cloudprovider.Provider, outliers chan cloudprovider.Outlier, alerts chan notifier.EmailAlert) {
-	sips, err := data.GetIPSByProvider(provider.IPKey)                                                  //Retrieve IP data from memcache
-	nips := cloudprovider.Outlier{ResultsKey: provider.ResultsKey, IPs: provider.GetIPs()}              //Retrieve IP data from cloud
-	baselineUpdate := fmt.Sprintf("Baseline update. %d IP(s) detected. IP(s): %s", len(nips.IPs), nips) //Baseline Update Alert
+func CheckIPBaselineChange(provider *cloudprovider.Provider, outliers chan cloudprovider.Outlier, alerts chan notifier.EmailAlert, mc *memcache.Client) {
+	sips, err := data.GetIPSByProvider(mc, provider.IPKey)                                                           //Retrieve IP data from memcache
+	nips := cloudprovider.Outlier{Key: provider.OutlierKey, ResultsKey: provider.ResultsKey, IPs: provider.GetIPs()} //Retrieve IP data from cloud
+	baselineUpdate := fmt.Sprintf("Baseline update. %d IP(s) detected. IP(s): %s", len(nips.IPs), nips)              //Baseline Update Alert
 	if err != nil {
 		miss := err.Error() == "memcache: cache miss" //Cache Miss?
 		if miss {
-			data.StoreIPSByProvider(provider)                                                        //Store the new IP baseline data
+			data.StoreIPSByProvider(mc, provider)                                                    //Store the new IP baseline data
 			outliers <- nips                                                                         //Scan the new set of IPs in the baseline
 			alerts <- notifier.EmailAlert{Body: baselineUpdate, ProviderName: provider.ProviderName} //Send Baseline Update alert
 		} else {
@@ -36,7 +37,7 @@ func CheckIPBaselineChange(provider *cloudprovider.Provider, outliers chan cloud
 		}
 	} else if len(sips) == 0 { //Empty IP for provider?
 		log.Printf("IP Baseline for %s doesnt exist.", provider.ProviderName)
-		data.StoreIPSByProvider(provider)                                                        //Store the new IP Data
+		data.StoreIPSByProvider(mc, provider)                                                    //Store the new IP Data
 		outliers <- nips                                                                         //Scan the new set of IPs in the baseline
 		alerts <- notifier.EmailAlert{Body: baselineUpdate, ProviderName: provider.ProviderName} //Send Baseline Update alert
 	} else {

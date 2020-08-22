@@ -39,3 +39,39 @@ func (a EmailAlert) Send(eCounter chan int) {
 
 	eCounter <- 1
 }
+
+//SendAlert - For sending email alerts
+func (a EmailAlert) SendAlert() {
+
+	msg := "From: " + gmailAddress + "\n" +
+		"To: " + gmailAddress + "\n" +
+		"Subject: Cloudiff " + a.ProviderName + " Alert \n\n" +
+		a.Body
+
+	err := smtp.SendMail("smtp.gmail.com:587",
+		smtp.PlainAuth("", gmailAddress, gmailPassword, "smtp.gmail.com"),
+		gmailAddress, []string{gmailAddress}, []byte(msg))
+	if err != nil {
+		log.Printf("smtp error: %s", err)
+		return
+	}
+
+	log.Printf("SENT %s changes", a.ProviderName)
+
+}
+
+//TrackEmailAlerts - numberOfAlerts is equal numberOfProviders
+func TrackEmailAlerts(numberOfAlerts int, alerts chan EmailAlert, counter chan int) {
+	c := 0
+	for {
+		select {
+		case i := <-counter:
+			c = c + i
+			log.Printf("Email #%d sent...", c)
+			if c == numberOfAlerts {
+				close(alerts)
+				break
+			}
+		}
+	}
+}

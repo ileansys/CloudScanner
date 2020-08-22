@@ -26,8 +26,16 @@ const (
 	GCPNmapResultsKey
 	//LocalHostNmapResults - memcached key for localhost nmap results
 	LocalHostNmapResults
+	//DOOutliersKey - memcached key for DO outliers
+	DOOutliersKey
+	//AWSOutliersKey - memcached key for AWS outliers
+	AWSOutliersKey
+	//GCPOutliersKey - memcached key for GCP outliers
+	GCPOutliersKey
+	//LocalhostOutliersKey - memcached key for the Localhost outliers
+	LocalhostOutliersKey
 )
 
 func (ip IPBaseline) String() string {
-	return [...]string{"GCPIPCount", "AWSIPCount", "DOIPCount", "GCPIPs", "AWSIPs", "DOIPs", "TESTIPs", "DONmapResults", "AWSNmapResults", "GCPNmapResults", "LocalHostNmapResults"}[ip]
+	return [...]string{"GCPIPCount", "AWSIPCount", "DOIPCount", "GCPIPs", "AWSIPs", "DOIPs", "TESTIPs", "DONmapResults", "AWSNmapResults", "GCPNmapResults", "LocalHostNmapResults", "DOOutliers", "AWSOutliers", "GCPOutliers", "LocalhostOutliers"}[ip]
 }

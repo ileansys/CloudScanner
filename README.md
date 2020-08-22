@@ -33,4 +33,5 @@ A cloud security and compliance change tracker.
 - Integrate with more cloud providers e.g. Azure, Oracle, Linode...
 - Containerization
 - Interactive Console
+- Custom Provider Modules
 - Gather Threat Intelligence about Public IPs on Platforms like Shodan, PassiveTotal, VirusTotal e.t.c

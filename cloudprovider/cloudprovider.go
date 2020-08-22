@@ -8,6 +8,7 @@ type CloudProvider interface {
 
 //Outlier - set of new IPs found after a scan
 type Outlier struct {
+	Key        string
 	ResultsKey string
 	IPs        []string
 }
@@ -15,6 +16,7 @@ type Outlier struct {
 //Provider properties
 type Provider struct {
 	ProviderName string
+	OutlierKey   string
 	IPKey        string
 	ResultsKey   string
 	IPs          []string

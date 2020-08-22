@@ -9,14 +9,8 @@ import (
 	"github.com/bradfitz/gomemcache/memcache"
 )
 
-var (
-	memcachedServer string = "127.0.0.1:11211"
-)
-
 //StoreIPSByProvider - Store IPs based on cloud provider
-func StoreIPSByProvider(provider *cloudprovider.Provider) error {
-	mc := memcache.New(memcachedServer)
-
+func StoreIPSByProvider(mc *memcache.Client, provider *cloudprovider.Provider) error {
 	jsonIPSByteArray, err := json.Marshal(provider.GetIPs()) //Marshall slice of IPs into JSON
 	if err != nil {
 		log.Fatal(err)
@@ -31,9 +25,7 @@ func StoreIPSByProvider(provider *cloudprovider.Provider) error {
 }
 
 //GetIPSByProvider - Get IPs for a specific cloud provider
-func GetIPSByProvider(cloudProviderIPsKey string) ([]string, error) {
-	mc := memcache.New(memcachedServer)
-
+func GetIPSByProvider(mc *memcache.Client, cloudProviderIPsKey string) ([]string, error) {
 	ips, err := mc.Get(cloudProviderIPsKey)
 	if err != nil {
 		return nil, err
@@ -49,9 +41,7 @@ func GetIPSByProvider(cloudProviderIPsKey string) ([]string, error) {
 }
 
 //StoreNmapScanResults - Store Nmap Scan results
-func StoreNmapScanResults(nmapResultsKey string, scanResults []byte) error {
-	mc := memcache.New(memcachedServer)
-
+func StoreNmapScanResults(mc *memcache.Client, nmapResultsKey string, scanResults []byte) error {
 	merr := mc.Set(&memcache.Item{Key: nmapResultsKey, Value: scanResults}) //Store Marshalled Slice of IPs
 	if merr != nil {
 		log.Fatal(merr)
@@ -61,8 +51,7 @@ func StoreNmapScanResults(nmapResultsKey string, scanResults []byte) error {
 }
 
 //GetNmapScanResults - Retrieve Nmap Scan results
-func GetNmapScanResults(nmapResultsKey string) ([]byte, error) {
-	mc := memcache.New(memcachedServer)
+func GetNmapScanResults(mc *memcache.Client, nmapResultsKey string) ([]byte, error) {
 
 	results, err := mc.Get(nmapResultsKey)
 	if err != nil {
