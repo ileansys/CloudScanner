@@ -8,26 +8,19 @@ import (
 	"ileansys.com/cloudiff/baseliner"
 	"ileansys.com/cloudiff/cloudprovider"
 	"ileansys.com/cloudiff/data"
+	"ileansys.com/cloudiff/notifier"
 	"ileansys.com/cloudiff/scanner"
 )
 
 func main() {
 
 	//Scan Outliers Scheduler
-	scanOutliersScheduler := gocron.NewScheduler()
-	scanOutliersScheduler.Every(5).Minute().Do(scan)
-	scanOutliersScheduler.Every(12).Minute().Do(update)
-	<-scanOutliersScheduler.Start()
-	_, stime := scanOutliersScheduler.NextRun()
+	scanScheduler := gocron.NewScheduler()
+	scanScheduler.Every(5).Minute().Do(scan)
+	//scanScheduler.Every(12).Minute().Do(update)
+	<-scanScheduler.Start()
+	_, stime := scanScheduler.NextRun()
 	log.Printf("Running scan at %v", stime)
-
-	//Update Baseline Scheduler
-	// updateBaselineScheduler := gocron.NewScheduler()
-	// updateBaselineScheduler.Every(10).Minute().Do(update)
-	// <-updateBaselineScheduler.Start()
-	// _, utime := updateBaselineScheduler.NextRun()
-	// fmt.Printf("Running baseline update at %v", utime)
-
 }
 
 func scan() {
@@ -54,17 +47,26 @@ func scan() {
 
 	//channel size based on number of providers
 	outliers := make(chan cloudprovider.Outlier, len(providers))
-	counter := make(chan int)
+	alerts := make(chan notifier.EmailAlert, len(providers))
+	scanCounter := make(chan int)
+	alertCounter := make(chan int)
 
 	//track scanners
-	go trackScanners(len(providers), outliers, counter)
-	swg.Add(1)
+	go trackScanners(len(providers), outliers, scanCounter)
+
+	//track alerts
+	go trackEmailAlerts(len(providers), alerts, alertCounter)
 
 	//scan outliers sent from baseliner
-	go scanOutliers(&swg, outliers, counter)
+	swg.Add(1)
+	go scanOutliers(&swg, outliers, scanCounter)
+	swg.Add(1)
+	go sendAlerts(&swg, alerts, alertCounter)
+
+	//check ip changes
 	for _, p := range providers {
 		swg.Add(1)
-		go checkIPChanges(p, &swg, outliers)
+		go checkIPChanges(p, &swg, outliers, alerts)
 	}
 	swg.Wait()
 
@@ -97,9 +99,9 @@ func update() {
 	uwg.Wait()
 }
 
-func checkIPChanges(provider cloudprovider.Provider, wg *sync.WaitGroup, outliers chan cloudprovider.Outlier) {
+func checkIPChanges(provider cloudprovider.Provider, wg *sync.WaitGroup, outliers chan cloudprovider.Outlier, alerts chan notifier.EmailAlert) {
 	defer wg.Done()
-	baseliner.CheckIPBaselineChange(&provider, outliers)
+	baseliner.CheckIPBaselineChange(&provider, outliers, alerts)
 }
 
 func updateIPBaselineData(provider cloudprovider.Provider, wg *sync.WaitGroup) {
@@ -115,6 +117,13 @@ func scanOutliers(wg *sync.WaitGroup, outliers chan cloudprovider.Outlier, count
 	}
 }
 
+func sendAlerts(wg *sync.WaitGroup, alerts chan notifier.EmailAlert, aCounter chan int) {
+	defer wg.Done()
+	for alert := range alerts {
+		go alert.Send(aCounter)
+	}
+}
+
 //numberOfScanners is equal numberOfProviders
 func trackScanners(numberOfScanners int, outliers chan cloudprovider.Outlier, counter chan int) {
 	c := 0
@@ -125,6 +134,22 @@ func trackScanners(numberOfScanners int, outliers chan cloudprovider.Outlier, co
 			log.Printf("Scanner #%d completed...", c)
 			if c == numberOfScanners {
 				close(outliers)
+				break
+			}
+		}
+	}
+}
+
+//numberOfAlerts is equal numberOfProviders
+func trackEmailAlerts(numberOfAlerts int, alerts chan notifier.EmailAlert, counter chan int) {
+	c := 0
+	for {
+		select {
+		case i := <-counter:
+			c = c + i
+			log.Printf("Email #%d sent...", c)
+			if c == numberOfAlerts {
+				close(alerts)
 				break
 			}
 		}
