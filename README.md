@@ -4,7 +4,7 @@
 ![alt text](https://github.com/ileansys/cloudiff/blob/master/cloudiff.png?raw=true)
 
 
-A cloud security and compliance change tracker.
+A cloud security and compliance change tracker. See beyond the clouds...
 
 ### Current Features
 - Retrieve IPs from AWS, GCP and DigitalOcean Cloud SDKs for compute resources
