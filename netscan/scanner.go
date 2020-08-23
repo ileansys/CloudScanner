@@ -62,57 +62,9 @@ func (ns NetworkScan) Service(providerResultsKey string, ipList []string, counte
 	if err := scanner.Wait(); err != nil {
 		panic(err)
 	} else {
-		CompareTwoServiceScans(providerResultsKey, resultBytes, mc)
-		data.StoreNmapScanResults(mc, providerResultsKey, resultBytes)
-	}
-
-	counter <- 1
-}
-
-//Ping - Conduct a Ping Scan
-func (ns NetworkScan) Ping(providerResultsKey string, ipList []string, counter chan int, mc *memcache.Client) {
-
-	var (
-		resultBytes []byte
-		errorBytes  []byte
-	)
-
-	log.Printf("Scanning outliers... %s", ipList)
-	scanner, err := nmap.NewScanner(
-		nmap.WithTargets(ipList...),
-		nmap.WithPorts("80,443,27017,27018,5432,3306,6379,6380,22,2222"), ///Check for the Data ;-p
-		nmap.WithServiceInfo(),
-	)
-
-	if err != nil {
-		log.Fatalf("unable to create nmap scanner: %v", err)
-	}
-
-	// Executes asynchronously, allowing results to be streamed in real time.
-	if err := scanner.RunAsync(); err != nil {
-		panic(err)
-	}
-
-	// Connect to stdout of scanner.
-	stdout := scanner.GetStdout()
-
-	// Connect to stderr of scanner.
-	stderr := scanner.GetStderr()
-
-	for stdout.Scan() {
-		log.Println(stdout.Text())
-		resultBytes = append(resultBytes, stdout.Bytes()...)
-	}
-
-	for stderr.Scan() {
-		errorBytes = append(errorBytes, stderr.Bytes()...)
-	}
-
-	// Blocks until the scan has completed.
-	if err := scanner.Wait(); err != nil {
-		panic(err)
-	} else {
-		CompareTwoServiceScans(providerResultsKey, resultBytes, mc)
+		if providerResultsKey != "LocalHostNmapResults" {
+			CompareTwoServiceScans(providerResultsKey, resultBytes, mc)
+		}
 		data.StoreNmapScanResults(mc, providerResultsKey, resultBytes)
 	}
 
@@ -141,7 +93,7 @@ func CompareTwoServiceScans(resultsKey string, newServiceBaseline []byte, mc *me
 
 	if diff := cmp.Diff(baseline.Hosts, changes.Hosts); diff != "" { //Compare results
 		changes := fmt.Sprintf("Service Baseline Changes: (+baseline -changes):\n %s", diff)
-		notifier.EmailAlert{Body: changes, ProviderName: resultsKey}.SendAlert() //Send alert to show differences
+		notifier.EmailAlert{Body: changes, ProviderName: resultsKey}.Send() //Send alert to show differences
 	}
 }
 

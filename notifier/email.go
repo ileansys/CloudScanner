@@ -17,8 +17,8 @@ var (
 	gmailPassword = os.Getenv("GMAIL_APP_PASSWORD")
 )
 
-//Send - For sending email alerts
-func (a EmailAlert) Send(eCounter chan int) {
+//SendViaChannel - For sending email alerts
+func (a EmailAlert) SendViaChannel(eCounter chan int) {
 
 	msg := "From: " + gmailAddress + "\n" +
 		"To: " + gmailAddress + "\n" +
@@ -40,8 +40,8 @@ func (a EmailAlert) Send(eCounter chan int) {
 	eCounter <- 1
 }
 
-//SendAlert - For sending email alerts
-func (a EmailAlert) SendAlert() {
+//Send - For sending email alerts
+func (a EmailAlert) Send() {
 
 	msg := "From: " + gmailAddress + "\n" +
 		"To: " + gmailAddress + "\n" +

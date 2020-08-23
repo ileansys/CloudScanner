@@ -20,11 +20,11 @@ var (
 func main() {
 
 	//Scan Outliers Scheduler
-	scanScheduler := gocron.NewScheduler()
-	scanScheduler.Every(1).Minute().Do(scan)
-	//scanScheduler.Every(12).Minute().Do(update)
-	<-scanScheduler.Start()
-	_, stime := scanScheduler.NextRun()
+	gocron.NewScheduler()
+	gocron.Every(15).Minute().Do(scan)
+	gocron.Every(28).Minute().Do(update)
+	<-gocron.Start()
+	_, stime := gocron.NextRun()
 	log.Printf("Running scan at %v", stime)
 
 }
@@ -75,7 +75,7 @@ func scan() {
 	//check ip changes
 	for _, p := range providers {
 		swg.Add(1)
-		go checkIPChanges(p, &swg, outliers, alerts, mc)
+		go checkIPChanges(mc, p, &swg, outliers, alerts)
 	}
 	swg.Wait()
 
@@ -112,7 +112,7 @@ func update() {
 	uwg.Wait()
 }
 
-func checkIPChanges(provider cloudprovider.Provider, wg *sync.WaitGroup, outliers chan cloudprovider.Outlier, alerts chan notifier.EmailAlert, mc *memcache.Client) {
+func checkIPChanges(mc *memcache.Client, provider cloudprovider.Provider, wg *sync.WaitGroup, outliers chan cloudprovider.Outlier, alerts chan notifier.EmailAlert) {
 	defer wg.Done()
 	baseliner.CheckIPBaselineChange(&provider, outliers, alerts, mc)
 }
@@ -126,7 +126,7 @@ func updateIPBaselineData(mc *memcache.Client, provider cloudprovider.Provider, 
 func sendAlerts(wg *sync.WaitGroup, alerts chan notifier.EmailAlert, aCounter chan int) {
 	defer wg.Done()
 	for alert := range alerts {
-		go alert.Send(aCounter)
+		go alert.SendViaChannel(aCounter)
 	}
 }
 
