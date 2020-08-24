@@ -1,10 +1,10 @@
 # Cloudiff
 
+A cloud security and compliance change tracker. 
 
 ![alt text](https://github.com/ileansys/cloudiff/blob/master/cloudiff.png?raw=true)
 
-
-A cloud security and compliance change tracker.
+See beyond the clouds...
 
 ### Current Features
 - Retrieve IPs from AWS, GCP and DigitalOcean Cloud SDKs for compute resources
@@ -38,3 +38,6 @@ A cloud security and compliance change tracker.
 - Interactive Console
 - Custom Provider Modules
 - Gather Threat Intelligence about Public IPs on Platforms like Shodan, PassiveTotal, VirusTotal e.t.c
+
+### Disclaimer!!!
+- Cloudiff is still in active developement
