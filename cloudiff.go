@@ -22,7 +22,6 @@ func main() {
 	//Scan Outliers Scheduler
 	gocron.NewScheduler()
 	gocron.Every(15).Minute().Do(scan)
-	//gocron.Every(28).Minute().Do(update)
 	<-gocron.Start()
 	_, stime := gocron.NextRun()
 	log.Printf("Running scan at %v", stime)
@@ -94,6 +93,7 @@ func scan() {
 	//track number of service changes
 	go baseliner.TrackServiceChanges(len(providers), serviceChanges, serviceChangesCounter)
 
+	//send service baseline change alerts
 	swg.Add(1)
 	go notifier.SendServiceChangeAlerts(&swg, serviceChangeAlerts, serviceChangeAlertCounter)
 
@@ -108,9 +108,3 @@ func checkIPChanges(mc *memcache.Client, provider cloudprovider.Provider, wg *sy
 	defer wg.Done()
 	baseliner.CheckIPBaselineChange(&provider, outliers, alerts, mc)
 }
-
-// func updateIPBaselineData(mc *memcache.Client, provider cloudprovider.Provider, wg *sync.WaitGroup) {
-// 	defer wg.Done()
-// 	log.Printf("Updating %s baseline...", provider.ProviderName)
-// 	data.StoreIPSByProvider(mc, &provider)
-// }
