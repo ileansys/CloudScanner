@@ -4,11 +4,13 @@ import (
 	"log"
 	"net/smtp"
 	"os"
+	"sync"
 )
 
 //EmailAlert - Send email alerts
 type EmailAlert struct {
 	Body         string
+	Subject      string
 	ProviderName string
 }
 
@@ -40,34 +42,46 @@ func (a EmailAlert) SendViaChannel(eCounter chan int) {
 	eCounter <- 1
 }
 
-//Send - For sending email alerts
-func (a EmailAlert) Send() {
-
-	msg := "From: " + gmailAddress + "\n" +
-		"To: " + gmailAddress + "\n" +
-		"Subject: Cloudiff " + a.ProviderName + " Alert \n\n" +
-		a.Body
-
-	err := smtp.SendMail("smtp.gmail.com:587",
-		smtp.PlainAuth("", gmailAddress, gmailPassword, "smtp.gmail.com"),
-		gmailAddress, []string{gmailAddress}, []byte(msg))
-	if err != nil {
-		log.Printf("smtp error: %s", err)
-		return
+//SendIPChangeAlerts - Opens a channel to send IP change alerts
+func SendIPChangeAlerts(wg *sync.WaitGroup, alerts chan EmailAlert, aCounter chan int) {
+	defer wg.Done()
+	for alert := range alerts {
+		go alert.SendViaChannel(aCounter)
 	}
-
-	log.Printf("SENT %s changes", a.ProviderName)
-
 }
 
-//TrackEmailAlerts - numberOfAlerts is equal numberOfProviders
-func TrackEmailAlerts(numberOfAlerts int, alerts chan EmailAlert, counter chan int) {
+//SendServiceChangeAlerts - Open channel to send service change alerts
+func SendServiceChangeAlerts(wg *sync.WaitGroup, alerts chan EmailAlert, aCounter chan int) {
+	defer wg.Done()
+	for alert := range alerts {
+		go alert.SendViaChannel(aCounter)
+	}
+}
+
+//TrackIPChangeAlerts - numberOfAlerts is equal numberOfProviders
+func TrackIPChangeAlerts(numberOfAlerts int, alerts chan EmailAlert, counter chan int) {
 	c := 0
 	for {
 		select {
 		case i := <-counter:
 			c = c + i
-			log.Printf("Email #%d sent...", c)
+			log.Printf("IP Change Email #%d sent...", c)
+			if c == numberOfAlerts {
+				close(alerts)
+				break
+			}
+		}
+	}
+}
+
+//TrackServiceChangeAlerts - numberOfAlerts is equal numberOfProviders
+func TrackServiceChangeAlerts(numberOfAlerts int, alerts chan EmailAlert, counter chan int) {
+	c := 0
+	for {
+		select {
+		case i := <-counter:
+			c = c + i
+			log.Printf("Service Change Email #%d sent...", c)
 			if c == numberOfAlerts {
 				close(alerts)
 				break

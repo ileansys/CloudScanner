@@ -22,7 +22,7 @@ func main() {
 	//Scan Outliers Scheduler
 	gocron.NewScheduler()
 	gocron.Every(15).Minute().Do(scan)
-	gocron.Every(28).Minute().Do(update)
+	//gocron.Every(28).Minute().Do(update)
 	<-gocron.Start()
 	_, stime := gocron.NextRun()
 	log.Printf("Running scan at %v", stime)
@@ -31,7 +31,7 @@ func main() {
 
 func scan() {
 
-	var swg sync.WaitGroup //scan and baseliner waitgroup
+	var swg sync.WaitGroup
 	mc := memcache.New(memcachedServer)
 	var providers = []cloudprovider.Provider{
 		cloudprovider.Provider{
@@ -54,62 +54,54 @@ func scan() {
 		}.Init(),
 	}
 
-	//channel size based on number of providers
-	outliers := make(chan cloudprovider.Outlier, len(providers))
-	alerts := make(chan notifier.EmailAlert, len(providers))
+	//ip outliers and service change channels
+	ipOutliers := make(chan cloudprovider.Outlier, len(providers))
+	serviceChanges := make(chan netscan.ServiceChanges, len(providers))
+
+	//change alert channels
+	ipChangeAlerts := make(chan notifier.EmailAlert, len(providers))
+	serviceChangeAlerts := make(chan notifier.EmailAlert, len(providers))
+
+	//update counters and close channels
 	scanCounter := make(chan int)
-	alertCounter := make(chan int)
+	serviceChangesCounter := make(chan int)
+	ipAlertCounter := make(chan int)
+	serviceChangeAlertCounter := make(chan int)
 
 	//track scanners
-	go TrackScanners(len(providers), outliers, scanCounter)
+	go netscan.TrackScanners(len(providers), ipOutliers, scanCounter)
 
-	//track alerts
-	go notifier.TrackEmailAlerts(len(providers), alerts, alertCounter)
+	//track ip change alerts
+	go notifier.TrackIPChangeAlerts(len(providers), ipChangeAlerts, ipAlertCounter)
 
-	//scan outliers sent from baseliner
+	//recieve and scan outliers sent from baseliner
 	swg.Add(1)
-	go netscan.Outliers(&swg, outliers, scanCounter, mc)
-	swg.Add(1)
-	go sendAlerts(&swg, alerts, alertCounter)
+	go netscan.RecieveAndScanOutliers(&swg, ipOutliers, serviceChanges, scanCounter, mc)
 
-	//check ip changes
+	//send IP change alerts from baseliner
+	swg.Add(1)
+	go notifier.SendIPChangeAlerts(&swg, ipChangeAlerts, ipAlertCounter)
+
+	//check for IP changes
 	for _, p := range providers {
 		swg.Add(1)
-		go checkIPChanges(mc, p, &swg, outliers, alerts)
+		go checkIPChanges(mc, p, &swg, ipOutliers, ipChangeAlerts)
 	}
+
+	//track change alerts from baseliner
+	go notifier.TrackServiceChangeAlerts(len(providers), serviceChangeAlerts, serviceChangeAlertCounter)
+
+	//track number of service changes
+	go baseliner.TrackServiceChanges(len(providers), serviceChanges, serviceChangesCounter)
+
+	swg.Add(1)
+	go notifier.SendServiceChangeAlerts(&swg, serviceChangeAlerts, serviceChangeAlertCounter)
+
+	//check for service baseline changes
+	go baseliner.CheckServiceBaselineChanges(serviceChangeAlerts, serviceChanges, serviceChangesCounter, mc)
+
 	swg.Wait()
 
-}
-
-func update() {
-	var uwg sync.WaitGroup //update baseline waitgroup
-	mc := memcache.New(memcachedServer)
-	var providers = []cloudprovider.Provider{
-		cloudprovider.Provider{
-			ProviderName: "DO",
-			IPKey:        data.DOIPsKey.String(),
-			OutlierKey:   data.DOOutliersKey.String(),
-			ResultsKey:   data.DONmapResultsKey.String(),
-		}.Init(),
-		cloudprovider.Provider{
-			ProviderName: "AWS",
-			IPKey:        data.AWSIPsKey.String(),
-			OutlierKey:   data.AWSOutliersKey.String(),
-			ResultsKey:   data.AWSNmapResultsKey.String(),
-		}.Init(),
-		cloudprovider.Provider{
-			ProviderName: "GCP",
-			IPKey:        data.GCPIPsKey.String(),
-			OutlierKey:   data.GCPOutliersKey.String(),
-			ResultsKey:   data.GCPNmapResultsKey.String(),
-		}.Init(),
-	}
-	//update IP baseline
-	for _, p := range providers {
-		uwg.Add(1)
-		go updateIPBaselineData(mc, p, &uwg)
-	}
-	uwg.Wait()
 }
 
 func checkIPChanges(mc *memcache.Client, provider cloudprovider.Provider, wg *sync.WaitGroup, outliers chan cloudprovider.Outlier, alerts chan notifier.EmailAlert) {
@@ -117,31 +109,8 @@ func checkIPChanges(mc *memcache.Client, provider cloudprovider.Provider, wg *sy
 	baseliner.CheckIPBaselineChange(&provider, outliers, alerts, mc)
 }
 
-func updateIPBaselineData(mc *memcache.Client, provider cloudprovider.Provider, wg *sync.WaitGroup) {
-	defer wg.Done()
-	log.Printf("Updating %s baseline...", provider.ProviderName)
-	data.StoreIPSByProvider(mc, &provider)
-}
-
-func sendAlerts(wg *sync.WaitGroup, alerts chan notifier.EmailAlert, aCounter chan int) {
-	defer wg.Done()
-	for alert := range alerts {
-		go alert.SendViaChannel(aCounter)
-	}
-}
-
-//TrackScanners - numberOfScanners is equal numberOfProviders
-func TrackScanners(numberOfScanners int, outliers chan cloudprovider.Outlier, counter chan int) {
-	c := 0
-	for {
-		select {
-		case i := <-counter:
-			c = c + i
-			log.Printf("Scanner #%d completed...", c)
-			if c == numberOfScanners {
-				close(outliers)
-				break
-			}
-		}
-	}
-}
+// func updateIPBaselineData(mc *memcache.Client, provider cloudprovider.Provider, wg *sync.WaitGroup) {
+// 	defer wg.Done()
+// 	log.Printf("Updating %s baseline...", provider.ProviderName)
+// 	data.StoreIPSByProvider(mc, &provider)
+// }

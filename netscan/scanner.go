@@ -1,18 +1,19 @@
 package netscan
 
 import (
-	"bytes"
-	"fmt"
 	"log"
 	"sync"
 
 	"github.com/Ullaakut/nmap"
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/google/go-cmp/cmp"
 	"ileansys.com/cloudiff/cloudprovider"
-	"ileansys.com/cloudiff/data"
-	"ileansys.com/cloudiff/notifier"
 )
+
+//ServiceChanges - object with service change properties
+type ServiceChanges struct {
+	NewServiceScanResults []byte
+	ProviderResultstKey   string
+}
 
 //NetworkScan - properties of network scan
 type NetworkScan struct {
@@ -20,7 +21,7 @@ type NetworkScan struct {
 }
 
 //Service - Conduct a Service Scan
-func (ns NetworkScan) Service(providerResultsKey string, ipList []string, counter chan int, mc *memcache.Client) {
+func (ns NetworkScan) Service(providerResultsKey string, ipList []string, serviceChanges chan ServiceChanges, counter chan int, mc *memcache.Client) {
 
 	var (
 		resultBytes []byte
@@ -62,46 +63,33 @@ func (ns NetworkScan) Service(providerResultsKey string, ipList []string, counte
 	if err := scanner.Wait(); err != nil {
 		panic(err)
 	} else {
-		if providerResultsKey != "LocalHostNmapResults" {
-			CompareTwoServiceScans(providerResultsKey, resultBytes, mc)
-		}
-		data.StoreNmapScanResults(mc, providerResultsKey, resultBytes)
+		serviceChanges <- ServiceChanges{ProviderResultstKey: providerResultsKey, NewServiceScanResults: resultBytes}
 	}
 
 	counter <- 1
 }
 
-//CompareTwoServiceScans - To check for changes in service basleines
-func CompareTwoServiceScans(resultsKey string, newServiceBaseline []byte, mc *memcache.Client) {
-	results, err := data.GetNmapScanResults(mc, resultsKey) //Get Service Baseline
-	if err != nil {
-		miss := err.Error() == "memcache: cache miss"
-		if miss {
-			return
-		}
-	}
-
-	baseline, berr := Parse(bytes.TrimSpace(results)) //Parse the Service Baseline
-	if berr != nil {
-		log.Fatal(berr)
-	}
-
-	changes, cerr := Parse(newServiceBaseline) //Parse new scan results
-	if cerr != nil {
-		log.Fatal(cerr)
-	}
-
-	if diff := cmp.Diff(baseline.Hosts, changes.Hosts); diff != "" { //Compare results
-		changes := fmt.Sprintf("Service Baseline Changes: (+baseline -changes):\n %s", diff)
-		notifier.EmailAlert{Body: changes, ProviderName: resultsKey}.Send() //Send alert to show differences
-	}
-}
-
-//Outliers - Scan outlierss
-func Outliers(wg *sync.WaitGroup, outliers chan cloudprovider.Outlier, counter chan int, mc *memcache.Client) {
+//RecieveAndScanOutliers - Receive and Scan outliers
+func RecieveAndScanOutliers(wg *sync.WaitGroup, outliers chan cloudprovider.Outlier, serviceChanges chan ServiceChanges, counter chan int, mc *memcache.Client) {
 	defer wg.Done()
 	ns := NetworkScan{Type: "Service"}
 	for out := range outliers {
-		go ns.Service(out.ResultsKey, out.IPs, counter, mc)
+		go ns.Service(out.ResultsKey, out.IPs, serviceChanges, counter, mc)
+	}
+}
+
+//TrackScanners - numberOfScanners is equal numberOfProviders
+func TrackScanners(numberOfScanners int, outliers chan cloudprovider.Outlier, counter chan int) {
+	c := 0
+	for {
+		select {
+		case i := <-counter:
+			c = c + i
+			log.Printf("Scanner #%d completed...", c)
+			if c == numberOfScanners {
+				close(outliers)
+				break
+			}
+		}
 	}
 }
