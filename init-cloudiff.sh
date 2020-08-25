@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # chkconfig: 35 95 05
-# description: Hello world application.
+# description: Cloudiff application.
 
 # Run at startup: sudo chkconfig hello-world on
 
@@ -14,8 +14,8 @@ app="cloudiff"
 # Start the service
 run() {
   echo -n $"Starting $app:"
-  cd /home/andrew/go/src/ileansys.com/cloudiff  #set path to your cloudiff binary
-  ./$app > /var/log/$app.log 2> /var/log/$app.err < /dev/null &
+  cd /home/cloudiff/go/src/ileansys.com/cloudiff  #set path to your cloudiff binary
+  ./$app > /home/cloudiff/$app.log 2> /home/cloudiff/$app.err < /dev/null &
   
   sleep 1
   
