@@ -5,11 +5,17 @@
 
 # Run at startup: sudo chkconfig hello-world on
 
-# Load functions from library
-. /lib/lsb/init-function
-
 # Name of the application
 app="cloudiff"
+
+pid_file="/var/run/$app.pid"
+get_pid() {
+    cat "$pid_file"
+}
+
+is_running() {
+    [ -f "$pid_file" ] && ps -p `get_pid` > /dev/null 2>&1
+}
 
 # Start the service
 run() {
@@ -82,7 +88,12 @@ case "$1" in
     stop
     ;;
   status)
-    status $app
+    if is_running; then
+        echo "Running"
+    else
+        echo "Stopped"
+        exit 1
+    fi
     ;;
   restart)
     stop
