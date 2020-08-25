@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/digitalocean/godo"
+	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v2"
 )
 
@@ -42,6 +43,11 @@ func getDOIPs() []string {
 }
 
 func getAccessToken() string {
+
+	err := godotenv.Load("/home/cloudiff/.env") //Load Environmental Variables
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
 	log.Printf("Fetching DO Config File %s ...", os.Getenv("DIGITALOCEAN_DOCTL_CONFIG"))
 	m := make(map[string]string)
