@@ -10,7 +10,7 @@
 ### END INIT INFO
 
 dir="$CLOUDIFF_PATH"
-cmd="cloudiff"
+cmd="./cloudiff"
 user="cloudiff"
 
 name=`basename $0`
