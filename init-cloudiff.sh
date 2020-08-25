@@ -6,7 +6,7 @@
 # Run at startup: sudo chkconfig hello-world on
 
 # Load functions from library
-. /etc/init.d/functions
+. /lib/lsb/init-function
 
 # Name of the application
 app="cloudiff"

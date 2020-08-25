@@ -6,4 +6,4 @@
 #
 STATUS=$(/etc/init.d/cloudiff status)
 # Most services will return something like "OK" if they are in fact "OK"
-test "$STATUS" = "expected_value" || /etc/init.d/cloudiff restart
+test "$STATUS" = "OK" || /etc/init.d/cloudiff restart
