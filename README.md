@@ -37,7 +37,7 @@ See beyond the clouds...
 - Containerization
 - Interactive Console
 - Custom Provider Modules
-- Gather Threat Intelligence about Public IPs on Platforms like Shodan, PassiveTotal, VirusTotal e.t.c
+- Gather Threat Intelligence from IP Enrichment Platforms like Shodan, RiskIQ PassiveTotal e.t.c
 
 ### Disclaimer!!!
 - Cloudiff is still in active developement

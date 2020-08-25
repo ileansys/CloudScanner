@@ -56,6 +56,10 @@ func CheckIPBaselineChange(provider *cloudprovider.Provider, outliers chan cloud
 	}
 }
 
+func testDuplicateIPSets(ipSet1 []string, ipSet2 []string) bool {
+	return reflect.DeepEqual(ipSet1, ipSet2)
+}
+
 func compareTwoIPSets(currentIPBaseline []string, provider *cloudprovider.Provider, outliers chan cloudprovider.Outlier, alerts chan notifier.EmailAlert) {
 	sort.Strings(currentIPBaseline)
 	sort.Strings(provider.GetIPs())

@@ -27,7 +27,9 @@ func (a EmailAlert) SendViaChannel(eCounter chan int) {
 		"Subject: Cloudiff " + a.ProviderName + " Alert \n\n" +
 		a.Body
 
-	if a.ProviderName != "Localhost" { //Don't send localhost alerts
+	if (a.ProviderName == "Localhost") || (a.ProviderName == "LocalHostNmapResults") { //Don't send localhost alerts
+		log.Printf("No changes to SEND")
+	} else {
 		err := smtp.SendMail("smtp.gmail.com:587",
 			smtp.PlainAuth("", gmailAddress, gmailPassword, "smtp.gmail.com"),
 			gmailAddress, []string{gmailAddress}, []byte(msg))

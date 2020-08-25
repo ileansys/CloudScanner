@@ -21,7 +21,7 @@ func main() {
 
 	//Scan Outliers Scheduler
 	gocron.NewScheduler()
-	gocron.Every(15).Minute().Do(scan)
+	gocron.Every(5).Minute().Do(scan)
 	<-gocron.Start()
 	_, stime := gocron.NextRun()
 	log.Printf("Running scan at %v", stime)

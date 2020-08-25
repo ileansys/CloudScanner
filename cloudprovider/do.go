@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/digitalocean/godo"
 	"gopkg.in/yaml.v2"
 )
 
 var (
-	doConfigFile string = "/home/andrew/.config/doctl/config.yaml"
+	doConfigFile = os.Getenv("DIGITALOCEAN_DOCTL_CONFIG")
 )
 
 //GetIPs - returns a list of DigitalOceans Public IPs (Both Floating IPs and Droplet IPs)
