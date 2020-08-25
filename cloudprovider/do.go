@@ -47,9 +47,11 @@ func getDOIPs() []string {
 
 func getAccessToken() string {
 
+	log.Printf("Fetching DO Config File %s ...", doConfigFile)
 	m := make(map[string]string)
 	yamlFile, err := ioutil.ReadFile(doConfigFile)
 	unmarshalError := yaml.Unmarshal(yamlFile, &m)
+
 	if err != nil {
 		fmt.Printf("Error parsing YAML file: %s\n", unmarshalError)
 	}
