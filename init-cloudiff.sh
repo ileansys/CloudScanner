@@ -3,7 +3,10 @@
 # chkconfig: 35 95 05
 # description: Cloudiff application.
 
-# Run at startup: sudo chkconfig hello-world on
+# Run at startup: sudo chkconfig cloudiff on
+
+# source init-functions
+source /lib/lsb/init-functions 
 
 # Name of the application
 app="cloudiff"
