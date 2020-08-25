@@ -24,7 +24,7 @@ is_running() {
 run() {
   echo -n $"Starting $app:"
   cd /home/cloudiff/go/src/ileansys.com/cloudiff  #set path to your cloudiff binary
-  ./$app > /home/cloudiff/$app.log 2> /home/cloudiff/$app.err < /dev/null &
+  su - cloudiff ./$app > /home/cloudiff/$app.log 2> /home/cloudiff/$app.err < /dev/null &
   
   sleep 1
   
