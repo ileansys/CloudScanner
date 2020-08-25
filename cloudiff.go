@@ -19,6 +19,7 @@ var (
 
 func main() {
 
+	log.Println("Starting cloudiff...")
 	//Scan Outliers Scheduler
 	gocron.NewScheduler()
 	gocron.Every(10).Minute().Do(scan)
