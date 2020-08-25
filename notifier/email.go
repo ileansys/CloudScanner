@@ -5,6 +5,8 @@ import (
 	"net/smtp"
 	"os"
 	"sync"
+
+	"github.com/joho/godotenv"
 )
 
 //EmailAlert - Send email alerts
@@ -14,13 +16,18 @@ type EmailAlert struct {
 	ProviderName string
 }
 
-var (
-	gmailAddress  = os.Getenv("GMAIL_ADDRESS")
-	gmailPassword = os.Getenv("GMAIL_APP_PASSWORD")
-)
-
 //SendViaChannel - For sending email alerts
 func (a EmailAlert) SendViaChannel(eCounter chan int) {
+
+	err := godotenv.Load("/home/cloudiff/.env") //Load Environmental Variables
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	var (
+		gmailAddress  = os.Getenv("GMAIL_ADDRESS")
+		gmailPassword = os.Getenv("GMAIL_APP_PASSWORD")
+	)
 
 	msg := "From: " + gmailAddress + "\n" +
 		"To: " + gmailAddress + "\n" +
