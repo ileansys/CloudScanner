@@ -11,10 +11,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var (
-	doConfigFile = os.Getenv("DIGITALOCEAN_DOCTL_CONFIG")
-)
-
 //GetIPs - returns a list of DigitalOceans Public IPs (Both Floating IPs and Droplet IPs)
 func getDOIPs() []string {
 
@@ -47,9 +43,9 @@ func getDOIPs() []string {
 
 func getAccessToken() string {
 
-	log.Printf("Fetching DO Config File %s ...", doConfigFile)
+	log.Printf("Fetching DO Config File %s ...", os.Getenv("DIGITALOCEAN_DOCTL_CONFIG"))
 	m := make(map[string]string)
-	yamlFile, err := ioutil.ReadFile(doConfigFile)
+	yamlFile, err := ioutil.ReadFile(os.Getenv("DIGITALOCEAN_DOCTL_CONFIG"))
 	unmarshalError := yaml.Unmarshal(yamlFile, &m)
 
 	if err != nil {

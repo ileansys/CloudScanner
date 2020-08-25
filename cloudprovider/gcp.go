@@ -9,13 +9,14 @@ import (
 	"google.golang.org/api/option"
 )
 
-var (
-	projectID     = os.Getenv("GOOGLE_PROJECTID")
-	gcpConfigFile = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS") //Get GCP credentials from config files
-)
-
 //GetIPs - List of compute addresses
 func getGCPIPs() []string {
+
+	var (
+		projectID     = os.Getenv("GOOGLE_PROJECTID")
+		gcpConfigFile = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS") //Get GCP credentials from config files
+	)
+
 	log.Println("Fetching GCP IPs...")
 	ctx := context.Background()
 	computeService, err := compute.NewService(ctx, option.WithCredentialsFile(gcpConfigFile))
