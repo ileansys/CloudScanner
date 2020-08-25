@@ -6,6 +6,7 @@ import (
 
 	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/jasonlvhit/gocron"
+	"github.com/joho/godotenv"
 	"ileansys.com/cloudiff/baseliner"
 	"ileansys.com/cloudiff/cloudprovider"
 	"ileansys.com/cloudiff/data"
@@ -30,6 +31,11 @@ func main() {
 }
 
 func scan() {
+
+	err := godotenv.Load("/home/cloudiff/.env") //Load Environmental Variables
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
 	var swg sync.WaitGroup
 	mc := memcache.New(memcachedServer)
