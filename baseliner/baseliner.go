@@ -43,8 +43,8 @@ func CheckIPBaselineChange(provider *cloudprovider.Provider, outliers chan cloud
 			alerts <- notifier.EmailAlert{Body: baselineUpdate, ProviderName: provider.ProviderName} //Send Baseline Update alert
 		} else {
 			log.Fatal(err)
-			outliers <- localhost                                                       //Scan myself :-). Do Nothing
-			alerts <- notifier.EmailAlert{Body: "Localhost", ProviderName: "Localhost"} //Send Localhost scan alert
+			outliers <- localhost                                                                                       //Scan myself :-). Do Nothing
+			alerts <- notifier.EmailAlert{Body: "Localhost", Subject: "IP Baseline Changes", ProviderName: "Localhost"} //Send Localhost scan alert
 		}
 	} else if len(sips) == 0 { //Empty IP for provider?
 		log.Printf("IP Baseline for %s doesnt exist.", provider.ProviderName)
@@ -54,10 +54,6 @@ func CheckIPBaselineChange(provider *cloudprovider.Provider, outliers chan cloud
 	} else {
 		compareTwoIPSets(sips, provider, outliers, alerts) //Compare Memcached IP Data with newly fetched IP Data
 	}
-}
-
-func testDuplicateIPSets(ipSet1 []string, ipSet2 []string) bool {
-	return reflect.DeepEqual(ipSet1, ipSet2)
 }
 
 func compareTwoIPSets(currentIPBaseline []string, provider *cloudprovider.Provider, outliers chan cloudprovider.Outlier, alerts chan notifier.EmailAlert) {
