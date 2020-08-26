@@ -87,22 +87,21 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 	if err != nil {
 		miss := err.Error() == "memcache: cache miss" //Cache Miss?
 		if miss {
-			data.StoreNmapScanResults(mc, resultsKey, newServiceChanges)       //Store Nmap Result Data
-			changes, cerr := netscan.Parse(bytes.TrimSpace(newServiceChanges)) //Parse new scan results
+			data.StoreNmapScanResults(mc, resultsKey, newServiceChanges)          //Store Nmap Result Data
+			newchanges, cerr := netscan.Parse(bytes.TrimSpace(newServiceChanges)) //Parse new scan results
 			if cerr != nil {
 				log.Fatal(cerr)
 			}
-			jsonResults, err := json.MarshalIndent(changes.Hosts, "", " ")
+			cJSONResults, err := json.MarshalIndent(newchanges.Hosts, "", " ")
 			if err != nil {
 				log.Fatal(err)
 			}
-			baselineUpdate := fmt.Sprintf("New Service Baseline update. \n %s", string(jsonResults))
+			baselineUpdate := fmt.Sprintf("New Service Baseline update. \n %s", string(cJSONResults))
 			serviceChangeAlerts <- notifier.EmailAlert{Body: baselineUpdate, ProviderName: resultsKey}
 		} else {
 			log.Fatal(err)
 		}
 	} else {
-		changeMap := make(map[string][]netscan.Port)
 		baseline, berr := netscan.Parse(bytes.TrimSpace(currentServiceBaselineResults)) //Parse the Service Baseline
 		if berr != nil {
 			log.Fatal(berr)
@@ -115,6 +114,7 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 
 		log.Println("Drawing comparisons...")
 		if diff := reflect.DeepEqual(baseline.Hosts, changes.Hosts); diff != true { //Compare Results
+			changeMap := make(map[string][]netscan.Port)
 			for index := range changes.Hosts {
 				addresses := changes.Hosts[index].Addresses
 				ports := changes.Hosts[index].Ports
