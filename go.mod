@@ -6,6 +6,7 @@ require (
 	github.com/Ullaakut/nmap v2.0.0+incompatible
 	github.com/aws/aws-sdk-go v1.34.9
 	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
+	github.com/clbanning/mxj v1.8.4
 	github.com/digitalocean/godo v1.42.1
 	github.com/google/go-cmp v0.5.1
 	github.com/jasonlvhit/gocron v0.0.1

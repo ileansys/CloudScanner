@@ -29,10 +29,34 @@ func (ns NetworkScan) Service(providerResultsKey string, ipList []string, servic
 	)
 
 	log.Printf("Scanning outliers... %s", ipList)
+	nseScripts := []string{
+		"mysql-info",
+		"mysql-brute",
+		"mysql-databases",
+		"mongodb-info",
+		"mongodb-databases",
+		"mongodb-brute",
+		"redis-info",
+		"redis-brute",
+		"pgsql-brute",
+		"http-jsonp-detection",
+		"couchdb-databases",
+		"couchdb-stats",
+	}
+
 	scanner, err := nmap.NewScanner(
 		nmap.WithTargets(ipList...),
-		nmap.WithPorts("80,443,27017,27018,5432,3306,6379,6380,22,2222"), ///Check for the Data ;-p
+		nmap.WithPorts("80,443,27017,27018,5432,3306,6379,6380,22,2222,5984,8091,8092,8093,8094,8095,8096"), //Check for the Data ;-p
+		nmap.WithScripts(nseScripts...),
 		nmap.WithServiceInfo(),
+		nmap.WithFilterHost(func(h nmap.Host) bool {
+			for idx := range h.Ports {
+				if h.Ports[idx].Status() == "open" {
+					return true
+				}
+			}
+			return false
+		}),
 	)
 
 	if err != nil {

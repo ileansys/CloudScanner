@@ -2,6 +2,7 @@ package baseliner
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"reflect"
@@ -14,7 +15,6 @@ import (
 	"ileansys.com/cloudiff/data"
 
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/kylelemons/godebug/pretty"
 	"github.com/scylladb/go-set/strset"
 )
 
@@ -84,11 +84,28 @@ func getIPBaselineOutliers(currentIPBaseline []string, newIPs []string, provider
 //CompareTwoServiceScans - To check for changes in service basleines
 func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, serviceChangeAlerts chan notifier.EmailAlert, serviceChangesCounter chan int, mc *memcache.Client) {
 	currentServiceBaselineResults, err := data.GetNmapScanResults(mc, resultsKey) //Get Service Baseline
+	changeMap := make(map[string][]netscan.Port)
 	if err != nil {
 		miss := err.Error() == "memcache: cache miss" //Cache Miss?
 		if miss {
-			data.StoreNmapScanResults(mc, resultsKey, newServiceChanges) //Store Nmap Result Data
-			baselineUpdate := fmt.Sprintf("New Service Baseline update. \n %s", string(newServiceChanges))
+			data.StoreNmapScanResults(mc, resultsKey, newServiceChanges)       //Store Nmap Result Data
+			changes, cerr := netscan.Parse(bytes.TrimSpace(newServiceChanges)) //Parse new scan results
+			if cerr != nil {
+				log.Fatal(cerr)
+			}
+			for index := range changes.Hosts {
+				addresses := changes.Hosts[index].Addresses
+				ports := changes.Hosts[index].Ports
+				for i := range addresses {
+					changeMap[addresses[i].Addr+":"+changes.Hosts[index].Hostnames[0].Name] = ports
+				}
+			}
+			jsonResults, err := json.MarshalIndent(changeMap, "", " ")
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			baselineUpdate := fmt.Sprintf("New Service Baseline update. \n %s", string(jsonResults))
 			serviceChangeAlerts <- notifier.EmailAlert{Body: baselineUpdate, ProviderName: resultsKey}
 		} else {
 			log.Fatal(err)
@@ -105,9 +122,20 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 		}
 
 		log.Println("Drawing comparisons...")
-		if diff := pretty.Compare(baseline.Hosts, changes.Hosts); diff != "" { //Compare Results
-			changes := fmt.Sprintf("Service Baseline Changes: (-baseline +changes):\n %s", diff)
-			serviceChangeAlerts <- notifier.EmailAlert{Body: changes, ProviderName: resultsKey} //Send something if there are changes
+		if diff := reflect.DeepEqual(baseline.Hosts, changes.Hosts); diff != true { //Compare Results
+			for index := range changes.Hosts {
+				addresses := changes.Hosts[index].Addresses
+				ports := changes.Hosts[index].Ports
+				for i := range addresses {
+					changeMap[addresses[i].Addr+":"+changes.Hosts[index].Hostnames[0].Name] = ports
+				}
+			}
+			jsonResults, err := json.MarshalIndent(changeMap, "", " ")
+			if err != nil {
+				log.Fatal(err)
+			}
+			serviceChanges := fmt.Sprintf("Service Changes: \n %s", string(jsonResults))
+			serviceChangeAlerts <- notifier.EmailAlert{Body: serviceChanges, ProviderName: resultsKey}
 		} else {
 			log.Printf("There are no service changes for %s: ", resultsKey)
 		}
