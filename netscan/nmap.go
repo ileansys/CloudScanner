@@ -1,6 +1,8 @@
 package netscan
 
 //Credits to https://github.com/lair-framework/go-nmap
+/*Package nmap parses Nmap XML data into a similary formed struct.*/
+
 import (
 	"encoding/xml"
 	"strconv"
@@ -10,8 +12,8 @@ import (
 // Timestamp represents time as a UNIX timestamp in seconds.
 type Timestamp time.Time
 
-//Str2time converts a string containing a UNIX timestamp to to a time.Time.
-func (t *Timestamp) Str2time(s string) error {
+// str2time converts a string containing a UNIX timestamp to to a time.Time.
+func (t *Timestamp) str2time(s string) error {
 	ts, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
 		return err
@@ -20,37 +22,33 @@ func (t *Timestamp) Str2time(s string) error {
 	return nil
 }
 
-// Time2str formats the time.Time value as a UNIX timestamp string.
+// time2str formats the time.Time value as a UNIX timestamp string.
 // XXX these might also need to be changed to pointers. See str2time and UnmarshalXMLAttr.
-func (t Timestamp) Time2str() string {
+func (t Timestamp) time2str() string {
 	return strconv.FormatInt(time.Time(t).Unix(), 10)
 }
 
-//MarshalJSON - Marshals to JSON
 func (t Timestamp) MarshalJSON() ([]byte, error) {
-	return []byte(t.Time2str()), nil
+	return []byte(t.time2str()), nil
 }
 
-//UnmarshalJSON - Unmarshals to JSON
 func (t *Timestamp) UnmarshalJSON(b []byte) error {
-	return t.Str2time(string(b))
+	return t.str2time(string(b))
 }
 
-//MarshalXMLAttr - Marshals XML Attributes
 func (t Timestamp) MarshalXMLAttr(name xml.Name) (xml.Attr, error) {
-	return xml.Attr{Name: name, Value: t.Time2str()}, nil
+	return xml.Attr{Name: name, Value: t.time2str()}, nil
 }
 
-//UnmarshalXMLAttr - Unmarshal XML Attributes
 func (t *Timestamp) UnmarshalXMLAttr(attr xml.Attr) (err error) {
-	return t.Str2time(attr.Value)
+	return t.str2time(attr.Value)
 }
 
 // NmapRun is contains all the data for a single nmap scan.
 type NmapRun struct {
 	Scanner          string         `xml:"scanner,attr" json:"scanner"`
 	Args             string         `xml:"args,attr" json:"args"`
-	Start            string         `xml:"start,attr" json:"start"`
+	Start            Timestamp      `xml:"start,attr" json:"start"`
 	StartStr         string         `xml:"startstr,attr" json:"startstr"`
 	Version          string         `xml:"version,attr" json:"version"`
 	ProfileName      string         `xml:"profile_name,attr" json:"profile_name"`
@@ -114,8 +112,8 @@ type Target struct {
 
 // Host contains all information about a single host.
 type Host struct {
-	StartTime     string        `xml:"starttime,attr" json:"starttime"`
-	EndTime       string        `xml:"endtime,attr" json:"endtime"`
+	StartTime     Timestamp     `xml:"starttime,attr" json:"starttime"`
+	EndTime       Timestamp     `xml:"endtime,attr" json:"endtime"`
 	Comment       string        `xml:"comment,attr" json:"comment"`
 	Status        Status        `xml:"status" json:"status"`
 	Addresses     []Address     `xml:"address" json:"addresses"`
@@ -337,12 +335,12 @@ type RunStats struct {
 // Finished contains detailed statistics regarding
 // a finished Nmap scan.
 type Finished struct {
-	Time     string  `xml:"time,attr" json:"time"`
-	TimeStr  string  `xml:"timestr,attr" json:"timestr"`
-	Elapsed  float32 `xml:"elapsed,attr" json:"elapsed"`
-	Summary  string  `xml:"summary,attr" json:"summary"`
-	Exit     string  `xml:"exit,attr" json:"exit"`
-	ErrorMsg string  `xml:"errormsg,attr" json:"errormsg"`
+	Time     Timestamp `xml:"time,attr" json:"time"`
+	TimeStr  string    `xml:"timestr,attr" json:"timestr"`
+	Elapsed  float32   `xml:"elapsed,attr" json:"elapsed"`
+	Summary  string    `xml:"summary,attr" json:"summary"`
+	Exit     string    `xml:"exit,attr" json:"exit"`
+	ErrorMsg string    `xml:"errormsg,attr" json:"errormsg"`
 }
 
 // HostStats contains the amount of up and down hosts and the total count.

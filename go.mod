@@ -10,6 +10,7 @@ require (
 	github.com/google/go-cmp v0.5.1
 	github.com/jasonlvhit/gocron v0.0.1
 	github.com/joho/godotenv v1.3.0
+	github.com/kylelemons/godebug v1.1.0
 	github.com/scylladb/go-set v1.0.2
 	google.golang.org/api v0.30.0
 	gopkg.in/yaml.v2 v2.3.0
