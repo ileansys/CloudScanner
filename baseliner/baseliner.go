@@ -2,7 +2,7 @@ package baseliner
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"log"
 	"reflect"
@@ -92,7 +92,7 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 			if cerr != nil {
 				log.Fatal(cerr)
 			}
-			cJSONResults, err := json.MarshalIndent(newchanges.Hosts, "", " ")
+			cJSONResults, err := xml.MarshalIndent(newchanges.Hosts, "", " ")
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -114,11 +114,11 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 
 		log.Println("Drawing comparisons...")
 		if diff := reflect.DeepEqual(baseline.Hosts, changes.Hosts); diff != true { //Compare Results
-			jsonResults, err := json.MarshalIndent(changes.Hosts, "", " ") //Send Changes
+			xmlResults, err := xml.MarshalIndent(changes.Hosts, "", " ") //Send Changes
 			if err != nil {
 				log.Fatal(err)
 			}
-			serviceChangeAlerts <- notifier.EmailAlert{Body: string(jsonResults), ProviderName: resultsKey}
+			serviceChangeAlerts <- notifier.EmailAlert{Body: string(xmlResults), ProviderName: resultsKey}
 		} else {
 			log.Printf("There are no service changes for %s: ", resultsKey)
 		}
