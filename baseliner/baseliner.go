@@ -97,7 +97,7 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 				addresses := changes.Hosts[index].Addresses
 				ports := changes.Hosts[index].Ports
 				for i := range addresses {
-					changeMap[addresses[i].Addr+":"+changes.Hosts[index].Hostnames[0].Name] = ports
+					changeMap[addresses[i].Addr] = ports
 				}
 			}
 			jsonResults, err := json.MarshalIndent(changeMap, "", " ")
@@ -127,7 +127,7 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 				addresses := changes.Hosts[index].Addresses
 				ports := changes.Hosts[index].Ports
 				for i := range addresses {
-					changeMap[addresses[i].Addr+":"+changes.Hosts[index].Hostnames[0].Name] = ports
+					changeMap[addresses[i].Addr] = ports
 				}
 			}
 			jsonResults, err := json.MarshalIndent(changeMap, "", " ")
