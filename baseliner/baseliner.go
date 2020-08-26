@@ -84,10 +84,10 @@ func getIPBaselineOutliers(currentIPBaseline []string, newIPs []string, provider
 //CompareTwoServiceScans - To check for changes in service basleines
 func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, serviceChangeAlerts chan notifier.EmailAlert, serviceChangesCounter chan int, mc *memcache.Client) {
 	currentServiceBaselineResults, err := data.GetNmapScanResults(mc, resultsKey) //Get Service Baseline
-	changeMap := make(map[string][]netscan.Port)
 	if err != nil {
 		miss := err.Error() == "memcache: cache miss" //Cache Miss?
 		if miss {
+			changeMap := make(map[string][]netscan.Port)
 			data.StoreNmapScanResults(mc, resultsKey, newServiceChanges)       //Store Nmap Result Data
 			changes, cerr := netscan.Parse(bytes.TrimSpace(newServiceChanges)) //Parse new scan results
 			if cerr != nil {
@@ -111,6 +111,7 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 			log.Fatal(err)
 		}
 	} else {
+		changeMap := make(map[string][]netscan.Port)
 		baseline, berr := netscan.Parse(bytes.TrimSpace(currentServiceBaselineResults)) //Parse the Service Baseline
 		if berr != nil {
 			log.Fatal(berr)
