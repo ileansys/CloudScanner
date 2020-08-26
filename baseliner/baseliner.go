@@ -105,7 +105,7 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 		}
 
 		log.Println("Drawing comparisons...")
-		if diff := pretty.CycleTracker.Compare(baseline.Hosts, changes.Hosts); diff != "" { //Compare Results
+		if diff := pretty.Compare(baseline.Hosts, changes.Hosts); diff != "" { //Compare Results
 			changes := fmt.Sprintf("Service Baseline Changes: (-baseline +changes):\n %s", diff)
 			serviceChangeAlerts <- notifier.EmailAlert{Body: changes, ProviderName: resultsKey} //Send something if there are changes
 		} else {
