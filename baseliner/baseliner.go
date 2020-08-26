@@ -114,15 +114,7 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 
 		log.Println("Drawing comparisons...")
 		if diff := reflect.DeepEqual(baseline.Hosts, changes.Hosts); diff != true { //Compare Results
-			changeMap := make(map[string][]netscan.Port)
-			for index := range changes.Hosts {
-				addresses := changes.Hosts[index].Addresses
-				ports := changes.Hosts[index].Ports
-				for i := range addresses {
-					changeMap[addresses[i].Addr] = ports
-				}
-			}
-			jsonResults, err := json.MarshalIndent(changeMap, "", " ")
+			jsonResults, err := json.MarshalIndent(changes.Hosts, "", " ") //Send Changes
 			if err != nil {
 				log.Fatal(err)
 			}
