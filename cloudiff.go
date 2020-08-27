@@ -22,8 +22,8 @@ func main() {
 	log.Println("Starting Cloudiff...")
 	//Scan Outliers Scheduler
 	gocron.NewScheduler()
-	gocron.Every(15).Minute().Do(scan)
-	gocron.Every(1).Hours().Do(update)
+	gocron.Every(15).Minutes().Do(scan)
+	gocron.Every(48).Minutes().Do(update)
 	<-gocron.Start()
 	_, stime := gocron.NextRun()
 	log.Printf("Running scan at %v", stime)
