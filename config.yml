@@ -1,12 +1,14 @@
-- providername: DO
-  ipkey: DOIPs
-  resultskey: DONmapResults
-- providername: AWS
-  ipkey: AWSIPs
-  resultskey: AWSNmapResults
-- providername: GCP
-  ipkey: GCPIPs
-  resultskey: GCPNmapResults
-- schedule: 
-  interval: Daily
-  specificTime: "16:00:00"
+- ports: "80,443,27017,27018,5432,3306,6379,6380,22,2222,5984,8091,8092,8093,8094,8095,8096"
+- scripts: 
+  - "mysql-info"
+  - "mysql-brute"
+  - "mysql-databases"
+  - "mongodb-info"
+  - "mongodb-databases"
+  - "mongodb-brute"
+  - "redis-info" 
+  - "redis-brute" 
+  - "pgsql-brute" 
+  - "http-jsonp-detection"
+  - "couchdb-databases"
+  - "couchdb-stats"

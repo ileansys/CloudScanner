@@ -27,16 +27,18 @@ See beyond the clouds...
 - nmap
 
 ### Roadmap Features
-- Configurability using yaml
+- Configurability of Modules using yaml
 - Archive IP Baseline Data in Persistent Database
-- Track and Archive Service Scan Baselines
-- Integrate with Vulnerability Scanners e.g. Nessus, OpenVAS, 
+- Track and Archive Service Scans
+- Service Scan Analytics using ELK Stack
+- Integrate with Vulnerability Scanners e.g. Nessus, OpenVAS, MSF
 - CIS Host and Container/k8s Hardening Inspection with Chef Inspec 
 - Ansible CIS Remediation Workflows
 - Integrate with more cloud providers e.g. Azure, Oracle, Linode...
-- Containerization
-- Interactive Console
-- Custom Provider Modules
+- Containerized Workloads
+- GUI and Interactive Shell Console
+- Custom Cloud Provider Modules
+- Attack Simulation via Metasploit API's
 - Gather Threat Intelligence from IP Enrichment Platforms like Shodan, RiskIQ PassiveTotal e.t.c
 
 ### Disclaimer!!!
