@@ -29,6 +29,7 @@ func (ns NetworkScan) Service(providerResultsKey string, ipList []string, servic
 	)
 
 	log.Printf("Scanning outliers... %s", ipList)
+
 	nseScripts := []string{
 		"mysql-info",
 		"mysql-brute",
@@ -43,11 +44,14 @@ func (ns NetworkScan) Service(providerResultsKey string, ipList []string, servic
 		"couchdb-databases",
 		"couchdb-stats",
 		"elasticsearch",
+		"membase-brute",
+		"membase-http-info",
+		"memcached-info",
 	}
 
 	scanner, err := nmap.NewScanner(
 		nmap.WithTargets(ipList...),
-		nmap.WithPorts("80,443,27017,27018,5432,3306,6379,6380,22,2222,5984,8091,8092,8093,8094,8095,8096,9200,9201,5601,9300,9301"), //Check for the Data -p
+		nmap.WithPorts("80,443,27017,27018,5432,3306,6379,6380,22,2222,5984,8091,8092,8093,8094,8095,8096,9200,9201,5601,9300,9301,4369,8091-8094,9100-9106,9110-9118,9120-9122,9130,9999,11209-11210,21100"),
 		nmap.WithScripts(nseScripts...),
 		nmap.WithServiceInfo(),
 		nmap.WithFilterHost(func(h nmap.Host) bool {
