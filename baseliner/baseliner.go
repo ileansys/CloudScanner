@@ -2,7 +2,6 @@ package baseliner
 
 import (
 	"bytes"
-	"encoding/xml"
 	"fmt"
 	"log"
 	"reflect"
@@ -87,16 +86,8 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 	if err != nil {
 		miss := err.Error() == "memcache: cache miss" //Cache Miss?
 		if miss {
-			data.StoreNmapScanResults(mc, resultsKey, newServiceChanges)          //Store Nmap Result Data
-			newchanges, cerr := netscan.Parse(bytes.TrimSpace(newServiceChanges)) //Parse new scan results
-			if cerr != nil {
-				log.Fatal(cerr)
-			}
-			cJSONResults, err := xml.MarshalIndent(newchanges.Hosts, "", " ")
-			if err != nil {
-				log.Fatal(err)
-			}
-			baselineUpdate := fmt.Sprintf("New Service Baseline update. \n %s", string(cJSONResults))
+			data.StoreNmapScanResults(mc, resultsKey, newServiceChanges) //Store Nmap Result Data
+			baselineUpdate := fmt.Sprintf("New Service Baseline update. \n %s", string(newServiceChanges))
 			serviceChangeAlerts <- notifier.EmailAlert{Body: baselineUpdate, ProviderName: resultsKey}
 		} else {
 			log.Fatal(err)
@@ -114,11 +105,8 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 
 		log.Println("Drawing comparisons...")
 		if diff := reflect.DeepEqual(baseline.Hosts, changes.Hosts); diff != true { //Compare Results
-			xmlResults, err := xml.MarshalIndent(changes.Hosts, "", " ") //Send Changes
-			if err != nil {
-				log.Fatal(err)
-			}
-			serviceChangeAlerts <- notifier.EmailAlert{Body: string(xmlResults), ProviderName: resultsKey}
+			serviceChanges := fmt.Sprintf("Service Changes. \n %s", string(newServiceChanges))
+			serviceChangeAlerts <- notifier.EmailAlert{Body: string(serviceChanges), ProviderName: resultsKey}
 		} else {
 			log.Printf("There are no service changes for %s: ", resultsKey)
 		}
