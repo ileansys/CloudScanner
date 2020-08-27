@@ -106,7 +106,7 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 		log.Println("Drawing comparisons...")
 		if diff := reflect.DeepEqual(baseline.Hosts, changes.Hosts); diff != true { //Compare Results
 			serviceChanges := fmt.Sprintf("Service Changes. \n %s", string(newServiceChanges))
-			serviceChangeAlerts <- notifier.EmailAlert{Body: string(serviceChanges), ProviderName: resultsKey}
+			serviceChangeAlerts <- notifier.EmailAlert{Body: serviceChanges, ProviderName: resultsKey}
 		} else {
 			log.Printf("There are no service changes for %s: ", resultsKey)
 		}
