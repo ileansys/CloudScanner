@@ -90,7 +90,8 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 		miss := err.Error() == "memcache: cache miss" //Cache Miss?
 		if miss {
 			data.StoreNmapScanResults(mc, resultsKey, newServiceChanges) //Store Nmap Result Data
-			baselineUpdate := fmt.Sprintf("New Service Baseline update. \n %s", string(newServiceChanges))
+			newxml := tokenizeXML(newServiceChanges)
+			baselineUpdate := fmt.Sprintf("New Service Baseline update. \n %s", newxml)
 			serviceChangeAlerts <- notifier.EmailAlert{Body: baselineUpdate, ProviderName: resultsKey}
 		} else {
 			log.Fatal(err)
@@ -108,24 +109,8 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 
 		log.Println("Drawing comparisons...")
 		if diff := reflect.DeepEqual(baseline.Hosts, changes.Hosts); diff != true { //Compare Results
-			buf := new(bytes.Buffer)
-			d := xml.NewDecoder(strings.NewReader(string(newServiceChanges)))
-			e := xml.NewEncoder(buf)
-			e.Indent("", " ")
-		tokenize:
-			for {
-				tok, err := d.Token()
-				switch {
-				case err == io.EOF:
-					e.Flush()
-					break tokenize
-				case err != nil:
-					log.Fatal(err)
-				}
-				e.EncodeToken(tok)
-			}
-			newxml := buf.String()
-			serviceChanges := fmt.Sprintf("Service Changes. \n %s", newxml)
+			xml := tokenizeXML(newServiceChanges)
+			serviceChanges := fmt.Sprintf("Service Changes. \n %s", xml)
 			serviceChangeAlerts <- notifier.EmailAlert{Body: serviceChanges, ProviderName: resultsKey}
 		} else {
 			log.Printf("There are no service changes for %s: ", resultsKey)
@@ -133,6 +118,27 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 	}
 
 	serviceChangesCounter <- 1
+}
+
+func tokenizeXML(scanResultsBytes []byte) string {
+	buf := new(bytes.Buffer)
+	d := xml.NewDecoder(strings.NewReader(string(scanResultsBytes)))
+	e := xml.NewEncoder(buf)
+	e.Indent("", " ")
+tokenize:
+	for {
+		tok, err := d.Token()
+		switch {
+		case err == io.EOF:
+			e.Flush()
+			break tokenize
+		case err != nil:
+			log.Fatal(err)
+		}
+		e.EncodeToken(tok)
+	}
+	newxml := buf.String()
+	return newxml
 }
 
 //TrackServiceChanges - numberOfServiceChanges is equal numberOfProviders
