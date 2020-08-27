@@ -2,10 +2,13 @@ package baseliner
 
 import (
 	"bytes"
+	"encoding/xml"
 	"fmt"
+	"io"
 	"log"
 	"reflect"
 	"sort"
+	"strings"
 
 	"ileansys.com/cloudiff/cloudprovider"
 	"ileansys.com/cloudiff/netscan"
@@ -105,7 +108,24 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 
 		log.Println("Drawing comparisons...")
 		if diff := reflect.DeepEqual(baseline.Hosts, changes.Hosts); diff != true { //Compare Results
-			serviceChanges := fmt.Sprintf("Service Changes. \n %s", string(newServiceChanges))
+			buf := new(bytes.Buffer)
+			d := xml.NewDecoder(strings.NewReader(string(newServiceChanges)))
+			e := xml.NewEncoder(buf)
+			e.Indent("", " ")
+		tokenize:
+			for {
+				tok, err := d.Token()
+				switch {
+				case err == io.EOF:
+					e.Flush()
+					break tokenize
+				case err != nil:
+					log.Fatal(err)
+				}
+				e.EncodeToken(tok)
+			}
+			newxml := buf.String()
+			serviceChanges := fmt.Sprintf("Service Changes. \n %s", newxml)
 			serviceChangeAlerts <- notifier.EmailAlert{Body: serviceChanges, ProviderName: resultsKey}
 		} else {
 			log.Printf("There are no service changes for %s: ", resultsKey)
