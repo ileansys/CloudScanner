@@ -95,7 +95,7 @@ func (a XMLEmailAlert) SendViaChannel(eCounter chan int) {
 
 func processXSLT(xml []byte) ([]byte, error) {
 	var out bytes.Buffer
-	cmd := exec.Command("xsltproc")
+	cmd := exec.Command("xalan")
 	cmd.Stdin = bytes.NewBuffer(xml)
 	cmd.Stdout = &out
 	err := cmd.Run()
