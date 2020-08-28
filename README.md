@@ -20,11 +20,11 @@ See beyond the clouds...
 - GCP Go SDKs
 - DigitalOcean Go SDKs
 
-### Data Stores
-- memcached 
-
-### Wrapped Tools
-- nmap
+### OS Tools/Dependicies
+- go - Writing and building code
+- memcached - Storing IP and service scan data
+- xalan - Converting xml to html reports
+- nmap & nse scripts - Service scans
 
 ### Roadmap Features
 - Configurability of Modules using yaml
