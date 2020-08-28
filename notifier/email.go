@@ -74,7 +74,7 @@ func (a XMLEmailAlert) SendViaChannel(eCounter chan int) {
 		m.SetHeader("From", gmailAddress)
 		m.SetHeader("To", gmailAddress)
 		m.SetHeader("Subject", "Cloudiff "+a.Subject)
-		m.SetBody("text/xml", a.Body)
+		m.SetBody("text/plain", a.Body)
 		d := gomail.NewDialer("smtp.gmail.com", 587, gmailAddress, gmailPassword)
 		if err := d.DialAndSend(m); err != nil {
 			panic(err)
