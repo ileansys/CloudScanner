@@ -38,19 +38,20 @@ func (a EmailAlert) SendViaChannel(eCounter chan int) {
 		gmailPassword = os.Getenv("GMAIL_APP_PASSWORD")
 	)
 
-	m := gomail.NewMessage()
-	m.SetHeader("From", gmailAddress)
-	m.SetHeader("To", gmailAddress)
-	m.SetHeader("Subject", encodeRFC2047(a.Subject))
-	m.SetBody("text/html", a.Body)
-
-	d := gomail.NewDialer("smtp.gmail.com", 587, gmailAddress, gmailPassword)
-
-	if err := d.DialAndSend(m); err != nil {
-		panic(err)
+	if (a.ProviderName == "Localhost") || (a.ProviderName == "LocalHostNmapResults") { //Don't send localhost alerts
+		log.Printf("No changes to SEND")
+	} else {
+		m := gomail.NewMessage()
+		m.SetHeader("From", gmailAddress)
+		m.SetHeader("To", gmailAddress)
+		m.SetHeader("Subject", encodeRFC2047(a.Subject))
+		m.SetBody("text/html", a.Body)
+		d := gomail.NewDialer("smtp.gmail.com", 587, gmailAddress, gmailPassword)
+		if err := d.DialAndSend(m); err != nil {
+			panic(err)
+		}
+		log.Printf("SENT %s changes", a.ProviderName)
 	}
-
-	log.Printf("SENT %s changes", a.ProviderName)
 
 	eCounter <- 1
 }
@@ -68,19 +69,20 @@ func (a XMLEmailAlert) SendViaChannel(eCounter chan int) {
 		gmailPassword = os.Getenv("GMAIL_APP_PASSWORD")
 	)
 
-	m := gomail.NewMessage()
-	m.SetHeader("From", gmailAddress)
-	m.SetHeader("To", gmailAddress)
-	m.SetHeader("Subject", encodeRFC2047(a.Subject))
-	m.SetBody("text/xml", a.Body)
-
-	d := gomail.NewDialer("smtp.gmail.com", 587, gmailAddress, gmailPassword)
-
-	if err := d.DialAndSend(m); err != nil {
-		panic(err)
+	if (a.ProviderName == "Localhost") || (a.ProviderName == "LocalHostNmapResults") { //Don't send localhost alerts
+		log.Printf("No changes to SEND")
+	} else {
+		m := gomail.NewMessage()
+		m.SetHeader("From", gmailAddress)
+		m.SetHeader("To", gmailAddress)
+		m.SetHeader("Subject", encodeRFC2047(a.Subject))
+		m.SetBody("text/html", a.Body)
+		d := gomail.NewDialer("smtp.gmail.com", 587, gmailAddress, gmailPassword)
+		if err := d.DialAndSend(m); err != nil {
+			panic(err)
+		}
+		log.Printf("SENT %s changes", a.ProviderName)
 	}
-
-	log.Printf("SENT %s changes", a.ProviderName)
 
 	eCounter <- 1
 }
