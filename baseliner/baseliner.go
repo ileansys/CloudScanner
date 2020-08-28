@@ -25,7 +25,7 @@ var (
 )
 
 //CheckServiceBaselineChanges - check for service baseline changes and send changes to email alerts channel
-func CheckServiceBaselineChanges(serviceChangeAlerts chan notifier.EmailAlert, serviceChanges chan netscan.ServiceChanges, serviceChangesCounter chan int, mc *memcache.Client) {
+func CheckServiceBaselineChanges(serviceChangeAlerts chan notifier.XMLEmailAlert, serviceChanges chan netscan.ServiceChanges, serviceChangesCounter chan int, mc *memcache.Client) {
 	for changes := range serviceChanges {
 		go compareTwoServiceScans(changes.ProviderResultstKey, changes.NewServiceScanResults, serviceChangeAlerts, serviceChangesCounter, mc)
 	}
@@ -84,15 +84,14 @@ func getIPBaselineOutliers(currentIPBaseline []string, newIPs []string, provider
 }
 
 //CompareTwoServiceScans - To check for changes in service basleines
-func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, serviceChangeAlerts chan notifier.EmailAlert, serviceChangesCounter chan int, mc *memcache.Client) {
+func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, serviceChangeAlerts chan notifier.XMLEmailAlert, serviceChangesCounter chan int, mc *memcache.Client) {
 	currentServiceBaselineResults, err := data.GetNmapScanResults(mc, resultsKey) //Get Service Baseline
 	if err != nil {
 		miss := err.Error() == "memcache: cache miss" //Cache Miss?
 		if miss {
 			data.StoreNmapScanResults(mc, resultsKey, newServiceChanges) //Store Nmap Result Data
 			newxml := tokenizeXML(newServiceChanges)
-			baselineUpdate := fmt.Sprintf("New Service Baseline update. \n %s", newxml)
-			serviceChangeAlerts <- notifier.EmailAlert{Body: baselineUpdate, ProviderName: resultsKey}
+			serviceChangeAlerts <- notifier.XMLEmailAlert{Body: newxml, Subject: resultsKey + " - New Service Baseline update", ProviderName: resultsKey}
 		} else {
 			log.Fatal(err)
 		}
@@ -110,8 +109,7 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 		log.Println("Drawing comparisons...")
 		if diff := reflect.DeepEqual(baseline.Hosts, changes.Hosts); diff != true { //Compare Results
 			xml := tokenizeXML(newServiceChanges)
-			serviceChanges := fmt.Sprintf("Service Changes. \n %s", xml)
-			serviceChangeAlerts <- notifier.EmailAlert{Body: serviceChanges, ProviderName: resultsKey}
+			serviceChangeAlerts <- notifier.XMLEmailAlert{Body: xml, Subject: resultsKey + " - Service Changes", ProviderName: resultsKey}
 		} else {
 			log.Printf("There are no service changes for %s: ", resultsKey)
 		}

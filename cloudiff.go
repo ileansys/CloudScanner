@@ -61,7 +61,7 @@ func scan() {
 
 	//change alert channels
 	ipChangeAlerts := make(chan notifier.EmailAlert, len(providers))
-	serviceChangeAlerts := make(chan notifier.EmailAlert, len(providers))
+	serviceChangeAlerts := make(chan notifier.XMLEmailAlert, len(providers))
 
 	//update counters and close channels
 	scanCounter := make(chan int)

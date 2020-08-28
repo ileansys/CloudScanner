@@ -14,5 +14,6 @@ require (
 	github.com/kylelemons/godebug v1.1.0
 	github.com/scylladb/go-set v1.0.2
 	google.golang.org/api v0.30.0
+	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v2 v2.3.0
 )

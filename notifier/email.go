@@ -2,15 +2,24 @@ package notifier
 
 import (
 	"log"
-	"net/smtp"
+	"net/mail"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/joho/godotenv"
+	"gopkg.in/gomail.v2"
 )
 
 //EmailAlert - Send email alerts
 type EmailAlert struct {
+	Body         string
+	Subject      string
+	ProviderName string
+}
+
+//XMLEmailAlert - Send email alerts
+type XMLEmailAlert struct {
 	Body         string
 	Subject      string
 	ProviderName string
@@ -29,26 +38,57 @@ func (a EmailAlert) SendViaChannel(eCounter chan int) {
 		gmailPassword = os.Getenv("GMAIL_APP_PASSWORD")
 	)
 
-	msg := "From: " + gmailAddress + "\n" +
-		"To: " + gmailAddress + "\n" +
-		"Subject: Cloudiff " + a.ProviderName + " Alert \n\n" +
-		a.Body
+	m := gomail.NewMessage()
+	m.SetHeader("From", gmailAddress)
+	m.SetHeader("To", gmailAddress)
+	m.SetHeader("Subject", encodeRFC2047(a.Subject))
+	m.SetBody("text/html", a.Body)
 
-	if (a.ProviderName == "Localhost") || (a.ProviderName == "LocalHostNmapResults") { //Don't send localhost alerts
-		log.Printf("No changes to SEND")
-	} else {
-		err := smtp.SendMail("smtp.gmail.com:587",
-			smtp.PlainAuth("", gmailAddress, gmailPassword, "smtp.gmail.com"),
-			gmailAddress, []string{gmailAddress}, []byte(msg))
-		if err != nil {
-			log.Printf("smtp error: %s", err)
-			return
-		}
+	d := gomail.NewDialer("smtp.gmail.com", 587, gmailAddress, gmailPassword)
 
-		log.Printf("SENT %s changes", a.ProviderName)
+	if err := d.DialAndSend(m); err != nil {
+		panic(err)
 	}
 
+	log.Printf("SENT %s changes", a.ProviderName)
+
 	eCounter <- 1
+}
+
+//SendViaChannel - For sending xml email alerts
+func (a XMLEmailAlert) SendViaChannel(eCounter chan int) {
+
+	err := godotenv.Load("/home/cloudiff/.env") //Load Environmental Variables
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	var (
+		gmailAddress  = os.Getenv("GMAIL_ADDRESS")
+		gmailPassword = os.Getenv("GMAIL_APP_PASSWORD")
+	)
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", gmailAddress)
+	m.SetHeader("To", gmailAddress)
+	m.SetHeader("Subject", encodeRFC2047(a.Subject))
+	m.SetBody("text/xml", a.Body)
+
+	d := gomail.NewDialer("smtp.gmail.com", 587, gmailAddress, gmailPassword)
+
+	if err := d.DialAndSend(m); err != nil {
+		panic(err)
+	}
+
+	log.Printf("SENT %s changes", a.ProviderName)
+
+	eCounter <- 1
+}
+
+func encodeRFC2047(subject string) string {
+	//mail.Address use mail's rfc2047 to encode any string
+	addr := mail.Address{subject, ""}
+	return strings.Trim(addr.String(), " <>")
 }
 
 //SendIPChangeAlerts - Opens a channel to send IP change alerts
@@ -60,7 +100,7 @@ func SendIPChangeAlerts(wg *sync.WaitGroup, alerts chan EmailAlert, aCounter cha
 }
 
 //SendServiceChangeAlerts - Open channel to send service change alerts
-func SendServiceChangeAlerts(wg *sync.WaitGroup, alerts chan EmailAlert, aCounter chan int) {
+func SendServiceChangeAlerts(wg *sync.WaitGroup, alerts chan XMLEmailAlert, aCounter chan int) {
 	defer wg.Done()
 	for alert := range alerts {
 		go alert.SendViaChannel(aCounter)
@@ -84,7 +124,7 @@ func TrackIPChangeAlerts(numberOfAlerts int, alerts chan EmailAlert, counter cha
 }
 
 //TrackServiceChangeAlerts - numberOfAlerts is equal numberOfProviders
-func TrackServiceChangeAlerts(numberOfAlerts int, alerts chan EmailAlert, counter chan int) {
+func TrackServiceChangeAlerts(numberOfAlerts int, alerts chan XMLEmailAlert, counter chan int) {
 	c := 0
 	for {
 		select {

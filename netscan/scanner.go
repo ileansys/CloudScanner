@@ -32,21 +32,22 @@ func (ns NetworkScan) Service(providerResultsKey string, ipList []string, servic
 
 	nseScripts := []string{
 		"mysql-info",
+		"mysql-empy-password",
 		"mysql-brute",
 		"mysql-databases",
 		"mongodb-info",
-		"mongodb-databases",
 		"mongodb-brute",
+		"mongodb-databases",
 		"redis-info",
 		"redis-brute",
-		"pgsql-brute",
-		"http-jsonp-detection",
 		"couchdb-databases",
 		"couchdb-stats",
 		"elasticsearch",
 		"membase-brute",
 		"membase-http-info",
 		"memcached-info",
+		"pgsql-brute",
+		"http-jsonp-detection",
 	}
 
 	scanner, err := nmap.NewScanner(
