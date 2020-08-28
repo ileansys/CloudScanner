@@ -2,9 +2,7 @@ package notifier
 
 import (
 	"log"
-	"net/mail"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/joho/godotenv"
@@ -44,7 +42,7 @@ func (a EmailAlert) SendViaChannel(eCounter chan int) {
 		m := gomail.NewMessage()
 		m.SetHeader("From", gmailAddress)
 		m.SetHeader("To", gmailAddress)
-		m.SetHeader("Subject", encodeRFC2047("Cloudiff "+a.Subject))
+		m.SetHeader("Subject", "Cloudiff "+a.Subject)
 		m.SetBody("text/html", a.Body)
 		d := gomail.NewDialer("smtp.gmail.com", 587, gmailAddress, gmailPassword)
 		if err := d.DialAndSend(m); err != nil {
@@ -75,8 +73,8 @@ func (a XMLEmailAlert) SendViaChannel(eCounter chan int) {
 		m := gomail.NewMessage()
 		m.SetHeader("From", gmailAddress)
 		m.SetHeader("To", gmailAddress)
-		m.SetHeader("Subject", encodeRFC2047("Cloudiff "+a.Subject))
-		m.SetBody("text/html", a.Body)
+		m.SetHeader("Subject", "Cloudiff "+a.Subject)
+		m.SetBody("text/xml", a.Body)
 		d := gomail.NewDialer("smtp.gmail.com", 587, gmailAddress, gmailPassword)
 		if err := d.DialAndSend(m); err != nil {
 			panic(err)
@@ -85,12 +83,6 @@ func (a XMLEmailAlert) SendViaChannel(eCounter chan int) {
 	}
 
 	eCounter <- 1
-}
-
-func encodeRFC2047(subject string) string {
-	//mail.Address use mail's rfc2047 to encode any string
-	addr := mail.Address{subject, ""}
-	return strings.Trim(addr.String(), " <>")
 }
 
 //SendIPChangeAlerts - Opens a channel to send IP change alerts
