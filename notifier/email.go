@@ -44,7 +44,7 @@ func (a EmailAlert) SendViaChannel(eCounter chan int) {
 		m := gomail.NewMessage()
 		m.SetHeader("From", gmailAddress)
 		m.SetHeader("To", gmailAddress)
-		m.SetHeader("Subject", encodeRFC2047(a.Subject))
+		m.SetHeader("Subject", encodeRFC2047("Cloudiff "+a.Subject))
 		m.SetBody("text/html", a.Body)
 		d := gomail.NewDialer("smtp.gmail.com", 587, gmailAddress, gmailPassword)
 		if err := d.DialAndSend(m); err != nil {
@@ -75,7 +75,7 @@ func (a XMLEmailAlert) SendViaChannel(eCounter chan int) {
 		m := gomail.NewMessage()
 		m.SetHeader("From", gmailAddress)
 		m.SetHeader("To", gmailAddress)
-		m.SetHeader("Subject", encodeRFC2047(a.Subject))
+		m.SetHeader("Subject", encodeRFC2047("Cloudiff "+a.Subject))
 		m.SetBody("text/html", a.Body)
 		d := gomail.NewDialer("smtp.gmail.com", 587, gmailAddress, gmailPassword)
 		if err := d.DialAndSend(m); err != nil {

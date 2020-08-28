@@ -29,20 +29,20 @@ func CheckServiceBaselineChanges(serviceChangeAlerts chan notifier.XMLEmailAlert
 	for changes := range serviceChanges {
 		go compareTwoServiceScans(changes.ProviderResultstKey, changes.NewServiceScanResults, serviceChangeAlerts, serviceChangesCounter, mc)
 	}
-
 }
 
 //CheckIPBaselineChange - check for IP Baseline Change and Send changes to outlier channel
 func CheckIPBaselineChange(provider *cloudprovider.Provider, outliers chan cloudprovider.Outlier, alerts chan notifier.EmailAlert, mc *memcache.Client) {
 	sips, err := data.GetIPSByProvider(mc, provider.IPKey)                                                           //Retrieve IP data from memcache
 	nips := cloudprovider.Outlier{Key: provider.OutlierKey, ResultsKey: provider.ResultsKey, IPs: provider.GetIPs()} //Retrieve IP data from cloud
-	baselineUpdate := fmt.Sprintf("New IP Baseline update. %d IP(s) detected. IP(s): %s", len(nips.IPs), nips)       //Baseline Update Alert
+	baselineUpdate := fmt.Sprintf("%d IP(s) detected. IP(s): %s", len(nips.IPs), nips)                               //Baseline Update Alert
+	subject := fmt.Sprintf("New IP Baseline for %s", provider.ProviderName)
 	if err != nil {
 		miss := err.Error() == "memcache: cache miss" //Cache Miss?
 		if miss {
-			data.StoreIPSByProvider(mc, provider)                                                    //Store the new IP baseline data
-			outliers <- nips                                                                         //Scan the new set of IPs in the baseline
-			alerts <- notifier.EmailAlert{Body: baselineUpdate, ProviderName: provider.ProviderName} //Send Baseline Update alert
+			data.StoreIPSByProvider(mc, provider)                                                                      //Store the new IP baseline data
+			outliers <- nips                                                                                           //Scan the new set of IPs in the baseline
+			alerts <- notifier.EmailAlert{Body: baselineUpdate, Subject: subject, ProviderName: provider.ProviderName} //Send Baseline Update alert
 		} else {
 			log.Fatal(err)
 			outliers <- localhost                                                                                       //Scan myself :-). Do Nothing
@@ -50,9 +50,9 @@ func CheckIPBaselineChange(provider *cloudprovider.Provider, outliers chan cloud
 		}
 	} else if len(sips) == 0 { //Empty IP for provider?
 		log.Printf("IP Baseline for %s doesnt exist.", provider.ProviderName)
-		data.StoreIPSByProvider(mc, provider)                                                    //Store the new IP Data
-		outliers <- nips                                                                         //Scan the new set of IPs in the baseline
-		alerts <- notifier.EmailAlert{Body: baselineUpdate, ProviderName: provider.ProviderName} //Send Baseline Update alert
+		data.StoreIPSByProvider(mc, provider)                                                                      //Store the new IP Data
+		outliers <- nips                                                                                           //Scan the new set of IPs in the baseline
+		alerts <- notifier.EmailAlert{Body: baselineUpdate, Subject: subject, ProviderName: provider.ProviderName} //Send Baseline Update alert
 	} else {
 		compareTwoIPSets(sips, provider, outliers, alerts) //Compare Memcached IP Data with newly fetched IP Data
 	}
@@ -64,8 +64,8 @@ func compareTwoIPSets(currentIPBaseline []string, provider *cloudprovider.Provid
 	b := reflect.DeepEqual(currentIPBaseline, provider.GetIPs())
 	if b == true {
 		log.Printf("IP Baseline for %s has not changed. \n", provider.ProviderName)
-		outliers <- localhost                                                       //Scan myself :-). Do Nothing
-		alerts <- notifier.EmailAlert{Body: "Localhost", ProviderName: "Localhost"} //Send Localhost scan alert
+		outliers <- localhost                                                                                          //Scan myself :-). Do Nothing
+		alerts <- notifier.EmailAlert{Body: "Localhost", Subject: "No IP Baseline Changes", ProviderName: "Localhost"} //Send Localhost scan alert
 	} else {
 		getIPBaselineOutliers(currentIPBaseline, provider.GetIPs(), provider, outliers, alerts)
 		log.Printf("IP Baseline for %s has changed. \n", provider.ProviderName)
@@ -79,7 +79,8 @@ func getIPBaselineOutliers(currentIPBaseline []string, newIPs []string, provider
 
 	//Send email alerts
 	ipSetStrings := fmt.Sprintf("%d IP(s) detected. IP(s): %s", len(ipSet3.List()), ipSet3.List())
-	alerts <- notifier.EmailAlert{Body: ipSetStrings, ProviderName: provider.ProviderName}
+	subject := fmt.Sprintf("IP Changes for %s", provider.ProviderName)
+	alerts <- notifier.EmailAlert{Body: ipSetStrings, Subject: subject, ProviderName: provider.ProviderName}
 	outliers <- cloudprovider.Outlier{ResultsKey: provider.ResultsKey, IPs: ipSet3.List()} //Compare IP Baselines
 }
 
@@ -91,7 +92,8 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 		if miss {
 			data.StoreNmapScanResults(mc, resultsKey, newServiceChanges) //Store Nmap Result Data
 			newxml := tokenizeXML(newServiceChanges)
-			serviceChangeAlerts <- notifier.XMLEmailAlert{Body: newxml, Subject: resultsKey + " - New Service Baseline update", ProviderName: resultsKey}
+			subject := fmt.Sprintf("New Service Baseline for %s", resultsKey)
+			serviceChangeAlerts <- notifier.XMLEmailAlert{Body: newxml, Subject: subject, ProviderName: resultsKey}
 		} else {
 			log.Fatal(err)
 		}
@@ -109,7 +111,8 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 		log.Println("Drawing comparisons...")
 		if diff := reflect.DeepEqual(baseline.Hosts, changes.Hosts); diff != true { //Compare Results
 			xml := tokenizeXML(newServiceChanges)
-			serviceChangeAlerts <- notifier.XMLEmailAlert{Body: xml, Subject: resultsKey + " - Service Changes", ProviderName: resultsKey}
+			subject := fmt.Sprintf("Service Changes for %s", resultsKey)
+			serviceChangeAlerts <- notifier.XMLEmailAlert{Body: xml, Subject: subject, ProviderName: resultsKey}
 		} else {
 			log.Printf("There are no service changes for %s: ", resultsKey)
 		}
