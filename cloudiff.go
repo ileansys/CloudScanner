@@ -23,7 +23,7 @@ func main() {
 	//Scan Outliers Scheduler
 	gocron.NewScheduler()
 	gocron.Every(15).Minutes().Do(scan)
-	gocron.Every(48).Minutes().Do(update)
+	gocron.Every(48).Minutes().Do(invalidate)
 	<-gocron.Start()
 	_, stime := gocron.NextRun()
 	log.Printf("Running scan at %v", stime)
@@ -106,46 +106,15 @@ func scan() {
 
 }
 
-func update() {
-
-	var wg sync.WaitGroup
-	mc := memcache.New(memcachedServer)
-	var providers = []cloudprovider.Provider{
-		cloudprovider.Provider{
-			ProviderName: "DO",
-			IPKey:        data.DOIPsKey.String(),
-			OutlierKey:   data.DOOutliersKey.String(),
-			ResultsKey:   data.DONmapResultsKey.String(),
-		}.Init(),
-		cloudprovider.Provider{
-			ProviderName: "AWS",
-			IPKey:        data.AWSIPsKey.String(),
-			OutlierKey:   data.AWSOutliersKey.String(),
-			ResultsKey:   data.AWSNmapResultsKey.String(),
-		}.Init(),
-		cloudprovider.Provider{
-			ProviderName: "GCP",
-			IPKey:        data.GCPIPsKey.String(),
-			OutlierKey:   data.GCPOutliersKey.String(),
-			ResultsKey:   data.GCPNmapResultsKey.String(),
-		}.Init(),
+func invalidate() {
+	mc := memcache.New(memcachedServer) //Triggers an update and a scan
+	err := mc.DeleteAll()
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	//Update IP Baseline
-	for _, p := range providers {
-		wg.Add(1)
-		go updateIPBaseline(mc, p, &wg)
-	}
-
-	wg.Wait()
 }
 
 func checkIPChanges(mc *memcache.Client, provider cloudprovider.Provider, wg *sync.WaitGroup, outliers chan cloudprovider.Outlier, alerts chan notifier.EmailAlert) {
 	defer wg.Done()
 	baseliner.CheckIPBaselineChange(&provider, outliers, alerts, mc)
-}
-
-func updateIPBaseline(mc *memcache.Client, provider cloudprovider.Provider, wg *sync.WaitGroup) {
-	defer wg.Done()
-	data.StoreIPSByProvider(mc, &provider)
 }
