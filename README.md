@@ -38,8 +38,9 @@ See beyond the clouds...
 - Containerized Workloads
 - GUI and Interactive Shell Console
 - Custom Cloud Provider Modules
-- Breack and Attack Simulation via Metasploit API's and Nmap scripts
+- Breack and Attack Simulation using Metasploit API's, Searchsploit, Nmap Scripts
 - Gather Threat Intelligence from IP Enrichment Platforms like Shodan, RiskIQ PassiveTotal e.t.c
+
 
 ### Disclaimer!!!
 - Cloudiff is still in active developement
