@@ -31,6 +31,7 @@ func (ns NetworkScan) Service(providerResultsKey string, ipList []string, servic
 	log.Printf("Scanning outliers... %s", ipList)
 
 	nseScripts := []string{
+		"banner",
 		"mysql-info",
 		"mysql-empty-password",
 		"mysql-brute",
