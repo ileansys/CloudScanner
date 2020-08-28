@@ -121,7 +121,7 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 	serviceChangesCounter <- 1
 }
 
-func tokenizeXML(scanResultsBytes []byte) string {
+func tokenizeXML(scanResultsBytes []byte) []byte {
 	buf := new(bytes.Buffer)
 	d := xml.NewDecoder(strings.NewReader(string(scanResultsBytes)))
 	e := xml.NewEncoder(buf)
@@ -138,7 +138,7 @@ tokenize:
 		}
 		e.EncodeToken(tok)
 	}
-	newxml := buf.String()
+	newxml := buf.Bytes()
 	return newxml
 }
 

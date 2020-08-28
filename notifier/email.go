@@ -1,8 +1,10 @@
 package notifier
 
 import (
+	"bytes"
 	"log"
 	"os"
+	"os/exec"
 	"sync"
 
 	"github.com/joho/godotenv"
@@ -18,7 +20,7 @@ type EmailAlert struct {
 
 //XMLEmailAlert - Send email alerts
 type XMLEmailAlert struct {
-	Body         string
+	Body         []byte
 	Subject      string
 	ProviderName string
 }
@@ -74,15 +76,33 @@ func (a XMLEmailAlert) SendViaChannel(eCounter chan int) {
 		m.SetHeader("From", gmailAddress)
 		m.SetHeader("To", gmailAddress)
 		m.SetHeader("Subject", "Cloudiff "+a.Subject)
-		m.SetBody("text/plain", a.Body)
-		d := gomail.NewDialer("smtp.gmail.com", 587, gmailAddress, gmailPassword)
-		if err := d.DialAndSend(m); err != nil {
-			panic(err)
+		body, err := processXSLT(a.Body)
+
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			m.SetBody("text/html", string(body))
+			d := gomail.NewDialer("smtp.gmail.com", 587, gmailAddress, gmailPassword)
+			if err := d.DialAndSend(m); err != nil {
+				panic(err)
+			}
+			log.Printf("SENT %s changes", a.ProviderName)
 		}
-		log.Printf("SENT %s changes", a.ProviderName)
 	}
 
 	eCounter <- 1
+}
+
+func processXSLT(xml []byte) ([]byte, error) {
+	var out bytes.Buffer
+	cmd := exec.Command("xsltproc")
+	cmd.Stdin = bytes.NewBuffer(xml)
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		return nil, err
+	}
+	return out.Bytes(), nil
 }
 
 //SendIPChangeAlerts - Opens a channel to send IP change alerts
