@@ -91,9 +91,9 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 		miss := err.Error() == "memcache: cache miss" //Cache Miss?
 		if miss {
 			data.StoreNmapScanResults(mc, resultsKey, newServiceChanges) //Store Nmap Result Data
-			newxml := tokenizeXML(newServiceChanges)
+			//newxml := tokenizeXML(newServiceChanges)
 			subject := fmt.Sprintf("New Service Baseline for %s", resultsKey)
-			serviceChangeAlerts <- notifier.XMLEmailAlert{Body: newxml, Subject: subject, ProviderName: resultsKey}
+			serviceChangeAlerts <- notifier.XMLEmailAlert{Body: newServiceChanges, Subject: subject, ProviderName: resultsKey}
 		} else {
 			log.Fatal(err)
 		}
@@ -110,9 +110,9 @@ func compareTwoServiceScans(resultsKey string, newServiceChanges []byte, service
 
 		log.Println("Drawing comparisons...")
 		if diff := reflect.DeepEqual(baseline.Hosts, changes.Hosts); diff != true { //Compare Results
-			xml := tokenizeXML(newServiceChanges)
+			//xml := tokenizeXML(newServiceChanges)
 			subject := fmt.Sprintf("Service Changes for %s", resultsKey)
-			serviceChangeAlerts <- notifier.XMLEmailAlert{Body: xml, Subject: subject, ProviderName: resultsKey}
+			serviceChangeAlerts <- notifier.XMLEmailAlert{Body: newServiceChanges, Subject: subject, ProviderName: resultsKey}
 		} else {
 			log.Printf("There are no service changes for %s: ", resultsKey)
 		}
