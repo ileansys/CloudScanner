@@ -38,7 +38,7 @@ See beyond the clouds...
 - Containerized Workloads
 - GUI and Interactive Shell Console
 - Custom Cloud Provider Modules
-- Breack and Attack Simulation using Metasploit API's, Searchsploit, Nmap Scripts
+- Breach and Attack Simulation using Metasploit API's, Searchsploit, Nmap Scripts
 - Gather Threat Intelligence from IP Enrichment Platforms like Shodan, RiskIQ PassiveTotal e.t.c
 
 
