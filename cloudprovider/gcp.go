@@ -35,7 +35,7 @@ func getGCPIPs() []string {
 //GetIPs - List of compute addresses
 func getComputeInstanceIPs(wg *sync.WaitGroup, ipChannel chan string) {
 	defer wg.Done()
-	err := godotenv.Load("/home/andrew/.env") //Load Environmental Variables
+	err := godotenv.Load("/home/cloudiff/.env") //Load Environmental Variables
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
@@ -70,7 +70,7 @@ func getComputeInstanceIPs(wg *sync.WaitGroup, ipChannel chan string) {
 
 func getForwardingRuleIPs(wg *sync.WaitGroup, ipChannel chan string) {
 	defer wg.Done()
-	err := godotenv.Load("/home/andrew/.env") //Load Environmental Variables
+	err := godotenv.Load("/home/cloudiff/.env") //Load Environmental Variables
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
