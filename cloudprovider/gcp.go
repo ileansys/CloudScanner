@@ -43,6 +43,7 @@ func getGCPIPs() []string {
 	wg.Add(1)
 	go getForwardingRuleIPs(&wg, ipChannel, counter)
 	wg.Wait()
+	close(counter)
 
 	return listOfIPAddresses //return the ip addresses
 
