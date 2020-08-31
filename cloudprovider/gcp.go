@@ -4,14 +4,38 @@ import (
 	"context"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/joho/godotenv"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
 )
 
-//GetIPs - List of compute addresses
 func getGCPIPs() []string {
+
+	listOfIPAddresses := make([]string, 0)
+	ipChannel := make(chan string) //create an IP channel
+	var wg sync.WaitGroup
+
+	go func() {
+		for ip := range ipChannel {
+			listOfIPAddresses = append(listOfIPAddresses, ip) //wait for ip addresses
+		}
+	}()
+
+	wg.Add(1)
+	go getComputeInstanceIPs(&wg, ipChannel)
+	wg.Add(1)
+	go getForwardingRuleIPs(&wg, ipChannel)
+	wg.Wait()
+	close(ipChannel) //close ip channel
+
+	return listOfIPAddresses //return the ip addresses
+
+}
+
+//GetIPs - List of compute addresses
+func getComputeInstanceIPs(wg *sync.WaitGroup, ipChannel chan string) {
 
 	err := godotenv.Load("/home/cloudiff/.env") //Load Environmental Variables
 	if err != nil {
@@ -22,14 +46,13 @@ func getGCPIPs() []string {
 		projectID     = os.Getenv("GOOGLE_PROJECTID")
 		gcpConfigFile = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS") //Get GCP credentials from config files
 	)
-	log.Println("Fetching GCP IPs...")
+	log.Println("Fetching Compute Instance IPs...")
 	ctx := context.Background()
 	computeService, err := compute.NewService(ctx, option.WithCredentialsFile(gcpConfigFile))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	listOfIPAddresses := make([]string, 0)
 	req := computeService.Instances.AggregatedList(projectID)
 	var publicIP string
 	if err := req.Pages(ctx, func(page *compute.InstanceAggregatedList) error {
@@ -37,7 +60,7 @@ func getGCPIPs() []string {
 			for _, instance := range instancesScopedList.Instances {
 				publicIP = instance.NetworkInterfaces[0].AccessConfigs[0].NatIP
 				if publicIP != "" {
-					listOfIPAddresses = append(listOfIPAddresses, publicIP)
+					ipChannel <- publicIP
 				}
 			}
 		}
@@ -45,5 +68,39 @@ func getGCPIPs() []string {
 	}); err != nil {
 		log.Fatal(err)
 	}
-	return listOfIPAddresses
+}
+
+func getForwardingRuleIPs(wg *sync.WaitGroup, ipChannel chan string) {
+
+	err := godotenv.Load("/home/cloudiff/.env") //Load Environmental Variables
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	var (
+		projectID     = os.Getenv("GOOGLE_PROJECTID")
+		gcpConfigFile = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS") //Get GCP credentials from config files
+	)
+	log.Println("Fetching Forwarding Rule IPs...")
+	ctx := context.Background()
+	computeService, err := compute.NewService(ctx, option.WithCredentialsFile(gcpConfigFile))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req := computeService.ForwardingRules.AggregatedList(projectID)
+	var publicIP string
+	if err := req.Pages(ctx, func(page *compute.ForwardingRuleAggregatedList) error {
+		for _, forwardingRuleScopedList := range page.Items {
+			for _, forwardingRule := range forwardingRuleScopedList.ForwardingRules {
+				publicIP = forwardingRule.IPAddress
+				if publicIP != "" {
+					ipChannel <- publicIP
+				}
+			}
+		}
+		return nil
+	}); err != nil {
+		log.Fatal(err)
+	}
 }
