@@ -15,7 +15,22 @@ func getGCPIPs() []string {
 
 	listOfIPAddresses := make([]string, 0)
 	ipChannel := make(chan string) //create an IP channel
+	counter := make(chan int)
 	var wg sync.WaitGroup
+
+	go func() {
+		c := 0
+		for {
+			select {
+			case i := <-counter:
+				c = c + i
+				if c == 2 {
+					close(ipChannel)
+					break
+				}
+			}
+		}
+	}()
 
 	go func() {
 		for ip := range ipChannel {
@@ -24,18 +39,17 @@ func getGCPIPs() []string {
 	}()
 
 	wg.Add(1)
-	go getComputeInstanceIPs(&wg, ipChannel)
+	go getComputeInstanceIPs(&wg, ipChannel, counter)
 	wg.Add(1)
-	go getForwardingRuleIPs(&wg, ipChannel)
+	go getForwardingRuleIPs(&wg, ipChannel, counter)
 	wg.Wait()
-	close(ipChannel) //close ip channel
 
 	return listOfIPAddresses //return the ip addresses
 
 }
 
 //GetIPs - List of compute addresses
-func getComputeInstanceIPs(wg *sync.WaitGroup, ipChannel chan string) {
+func getComputeInstanceIPs(wg *sync.WaitGroup, ipChannel chan string, counter chan int) {
 
 	err := godotenv.Load("/home/cloudiff/.env") //Load Environmental Variables
 	if err != nil {
@@ -68,9 +82,11 @@ func getComputeInstanceIPs(wg *sync.WaitGroup, ipChannel chan string) {
 	}); err != nil {
 		log.Fatal(err)
 	}
+
+	counter <- 1
 }
 
-func getForwardingRuleIPs(wg *sync.WaitGroup, ipChannel chan string) {
+func getForwardingRuleIPs(wg *sync.WaitGroup, ipChannel chan string, counter chan int) {
 
 	err := godotenv.Load("/home/cloudiff/.env") //Load Environmental Variables
 	if err != nil {
@@ -103,4 +119,6 @@ func getForwardingRuleIPs(wg *sync.WaitGroup, ipChannel chan string) {
 	}); err != nil {
 		log.Fatal(err)
 	}
+
+	counter <- 1
 }
