@@ -48,6 +48,7 @@ func (ns NetworkScan) Service(providerResultsKey string, ipList []string, servic
 		"membase-http-info",
 		"memcached-info",
 		"pgsql-brute",
+		"ssl-cert-intaddr",
 		"http-jsonp-detection",
 	}
 
