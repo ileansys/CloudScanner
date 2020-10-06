@@ -52,13 +52,13 @@ func getComputeInstanceIPs(wg *sync.WaitGroup, ipChannel chan string) {
 	}
 
 	req := computeService.Instances.AggregatedList(projectID)
-	var publicIP string
 	if err := req.Pages(ctx, func(page *compute.InstanceAggregatedList) error {
 		for _, instancesScopedList := range page.Items {
 			for _, instance := range instancesScopedList.Instances {
-				publicIP = instance.NetworkInterfaces[0].AccessConfigs[0].NatIP
-				if publicIP != "" {
-					ipChannel <- publicIP
+				for _, accessConfig := range instance.NetworkInterfaces[0].AccessConfigs {
+					if accessConfig.NatIP != "" {
+						ipChannel <- accessConfig.NatIP
+					}
 				}
 			}
 		}
