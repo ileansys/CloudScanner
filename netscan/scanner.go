@@ -50,6 +50,7 @@ func (ns NetworkScan) Service(providerResultsKey string, ipList []string, servic
 		"pgsql-brute",
 		"ssl-cert-intaddr",
 		"http-jsonp-detection",
+		"http-vulners-regex",
 	}
 
 	scanner, err := nmap.NewScanner(
@@ -89,6 +90,7 @@ func (ns NetworkScan) Service(providerResultsKey string, ipList []string, servic
 	}
 
 	for stderr.Scan() {
+		log.Println(stderr.Text())
 		errorBytes = append(errorBytes, stderr.Bytes()...)
 	}
 
