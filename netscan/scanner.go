@@ -32,6 +32,7 @@ func (ns NetworkScan) Service(providerResultsKey string, ipList []string, servic
 
 	nseScripts := []string{
 		"banner",
+		"http-enum",
 		"mysql-info",
 		"mysql-empty-password",
 		"mysql-brute",
