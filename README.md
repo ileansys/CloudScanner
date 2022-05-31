@@ -27,20 +27,10 @@ See beyond the clouds...
 - nmap & nse scripts - Service scans
 
 ### Roadmap Features
-- Configurability of Modules using yaml
-- Archive IP Baseline Data in Persistent Database
-- Track and Archive Service Scans
-- Service Scan Analytics using ELK Stack
-- Integrate with Vulnerability Scanners e.g. Nessus, OpenVAS, MSF
-- CIS Host and Container/k8s Hardening Inspection with Chef Inspec 
-- Ansible CIS Remediation Workflows
-- Integrate with more cloud providers e.g. Azure, Oracle, Linode...
-- Containerized Workloads
-- GUI and Interactive Shell Console
-- Custom Cloud Provider Modules
-- Breach and Attack Simulation using Metasploit API's, Searchsploit, Nmap Scripts
-- Gather Threat Intelligence from IP Enrichment Platforms like Shodan, RiskIQ PassiveTotal e.t.c
-
+- Configurability of scan workflows using yaml
+- Integrate with Nuclei or other suitable DAST scanner
+- Other Cloud Provider Modules
+- Replace memcached with PostgreSQL
 
 ### Disclaimer!!!
 - Cloudiff is still in active developement
