@@ -28,8 +28,7 @@ See beyond the clouds...
 
 ### Roadmap Features
 - Configurability of scan workflows using yaml
-- Integrate with Nuclei or other suitable DAST scanner
-- Other Cloud Provider Modules
+- Directly use Nuclei, Cloudlist and HTTPx from ProjectDiscovery
 - Replace memcached with PostgreSQL
 
 ### Disclaimer!!!
