@@ -28,7 +28,8 @@ See beyond the clouds...
 - nmap & nse scripts - Service scans
 
 ### Roadmap Features
-- Replace memcached with PostgreSQL
+- Replace memcached with TimescaleDB (PostgreSQL for Time Series Data)
+  to track anomalies i.e. Discover New Ports, IP's or Services
 
 ### Disclaimer!!!
 - CloudScanner is still in active developement
