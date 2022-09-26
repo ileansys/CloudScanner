@@ -2,7 +2,7 @@
 
 An Nmap wrapper that continuously scans your assets hosted on different cloud providers.
 
-![alt text](https://github.com/ileansys/cloudiff/blob/master/cloudiff.png?raw=true)
+![alt text](https://github.com/ileansys/CloudScanner/blob/master/CloudScanner.png?raw=true)
 
 See beyond the clouds...
 
