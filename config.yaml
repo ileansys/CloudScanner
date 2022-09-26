@@ -1,0 +1,30 @@
+cron: 
+# Scan Frequency
+- "*/15 * * * *"
+# Invalidates IP Cache
+# Triggers a new fetch of IPs
+- "*/104 * * * *"
+ports:
+- "80,443,8080,27017-27020,5432,3306,6379,6380,22,2222,5984,9200,9201,5601,9300,9301,4369,8091-8096,9100-9106,9110-9118,9120-9122,9130,9999,11209-11211,21100"
+scripts:
+  - "banner"
+  - "http-enum"
+  - "mysql-info"
+  - "mysql-empty-password"
+  - "mysql-brute"
+  - "mysql-databases"
+  - "mongodb-info"
+  - "mongodb-brute"
+  - "mongodb-databases"
+  - "redis-info"
+  - "redis-brute"
+  - "couchdb-databases"
+  - "couchdb-stats"
+  - "elasticsearch"
+  - "membase-brute"
+  - "membase-http-info"
+  - "memcached-info"
+  - "pgsql-brute"
+  - "ssl-cert-intaddr"
+  - "http-jsonp-detection"
+  - "http-vulners-regex"

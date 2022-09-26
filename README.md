@@ -1,6 +1,6 @@
-# Cloudiff
+# CloudScanner
 
-A cloud security compliance change tracker. 
+An Nmap wrapper that continuously scans your assets hosted on different cloud providers.
 
 ![alt text](https://github.com/ileansys/cloudiff/blob/master/cloudiff.png?raw=true)
 
@@ -14,6 +14,7 @@ See beyond the clouds...
 - Customized Schedules and Scan Intervals (cron)
 - Storing Service Scan Baselines
 - Change Notifications and Alerts
+- Configure Ports and Scan Frequency on YAML
 
 ### Integrations
 - AWS Go SDKs
@@ -27,9 +28,7 @@ See beyond the clouds...
 - nmap & nse scripts - Service scans
 
 ### Roadmap Features
-- Configurability of scan workflows using yaml
-- Directly use Nuclei, Cloudlist and HTTPx from ProjectDiscovery
 - Replace memcached with PostgreSQL
 
 ### Disclaimer!!!
-- Cloudiff is still in active developement
+- CloudScanner is still in active developement
