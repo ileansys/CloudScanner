@@ -7,9 +7,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/digitalocean/godo"
 	"github.com/joho/godotenv"
-	"github.com/projectdiscovery/cloudlist/pkg/inventory"
-	"github.com/projectdiscovery/cloudlist/pkg/schema"
 	"gopkg.in/yaml.v2"
 )
 
@@ -17,26 +16,27 @@ import (
 func getDOIPs() []string {
 
 	ips := make([]string, 0) //cumulative list of droplet and floating ips
+
 	doAccessToken := getAccessToken()
+	client := godo.NewFromToken(doAccessToken)
+	ctx := context.TODO()
 
-	inventory, err := inventory.New(schema.Options{
-		schema.OptionBlock{"provider": "digitalocean", "digitalocean_token": doAccessToken},
-	})
-
-	if err != nil {
-		log.Fatalf("%s\n", err)
+	floatingIPlist, floatingIPErr := getFloatingIPList(ctx, client) //get a list of floatingips
+	if floatingIPErr != nil {
+		log.Fatal(floatingIPErr)
 	}
 
-	for _, provider := range inventory.Providers {
-		resources, err := provider.Resources(context.Background())
-		fmt.Println(resources)
-		if err != nil {
-			log.Fatalf("%s\n", err)
-		}
-		for _, resource := range resources.Items {
-			fmt.Println(resource.PublicIPv4)
-			ips = append(ips, resource.PublicIPv4)
-		}
+	droptletList, dropletErr := getDropletList(ctx, client) //get a list of droplets
+	if dropletErr != nil {
+		log.Fatal(dropletErr)
+	}
+
+	for _, floatingIP := range floatingIPlist { //loop through the FloatingIPList and extract the IPs
+		ips = append(ips, floatingIP.IP)
+	}
+
+	for _, droplet := range droptletList {
+		ips = append(ips, droplet.Networks.V4[0].IPAddress) //loop through the dropletList and extract the IPs
 	}
 
 	return ips
@@ -63,4 +63,74 @@ func getAccessToken() string {
 		fmt.Printf("Error parsing YAML file: %s\n", unmarshalError)
 	}
 	return m["access-token"]
+}
+
+//getDropletList - Fetch Droplet list from DigitalOcean
+func getDropletList(ctx context.Context, client *godo.Client) ([]godo.Droplet, error) {
+
+	log.Println("Fetching DO Droplet IPs...")
+	// create a list to hold our droplets
+	list := []godo.Droplet{}
+
+	// create options. initially, these will be blank
+	opt := &godo.ListOptions{}
+	for {
+		droplets, resp, err := client.Droplets.List(ctx, opt)
+		if err != nil {
+			return nil, err
+		}
+
+		// append the current page's droplets to our list
+		list = append(list, droplets...)
+
+		// if we are at the last page, break out the for loop
+		if resp.Links == nil || resp.Links.IsLastPage() {
+			break
+		}
+
+		page, err := resp.Links.CurrentPage()
+		if err != nil {
+			return nil, err
+		}
+
+		// set the page we want for the next request
+		opt.Page = page + 1
+	}
+
+	return list, nil
+}
+
+//getFloatingIPList - Fetch FloatingIP list from DigitalOcean
+func getFloatingIPList(ctx context.Context, client *godo.Client) ([]godo.FloatingIP, error) {
+
+	log.Println("Fetching DO Floating IPs...")
+	// create a list to hold our droplets
+	list := []godo.FloatingIP{}
+
+	// create options. initially, these will be blank
+	opt := &godo.ListOptions{}
+	for {
+		floatingips, resp, err := client.FloatingIPs.List(ctx, opt)
+		if err != nil {
+			return nil, err
+		}
+
+		// append the current page's droplets to our list
+		list = append(list, floatingips...)
+
+		// if we are at the last page, break out the for loop
+		if resp.Links == nil || resp.Links.IsLastPage() {
+			break
+		}
+
+		page, err := resp.Links.CurrentPage()
+		if err != nil {
+			return nil, err
+		}
+
+		// set the page we want for the next request
+		opt.Page = page + 1
+	}
+
+	return list, nil
 }
