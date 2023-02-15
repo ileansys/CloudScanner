@@ -7,7 +7,7 @@ import (
 	"cloudscanner.app/pkg/baseliner"
 	"cloudscanner.app/pkg/cloudprovider"
 	"cloudscanner.app/pkg/data"
-	"cloudscanner.app/pkg/netscan"
+	"cloudscanner.app/pkg/netscan/nmap"
 	"cloudscanner.app/pkg/notifier"
 	"github.com/bradfitz/gomemcache/memcache"
 )
@@ -20,6 +20,8 @@ func Scan() {
 
 	var swg sync.WaitGroup
 	mc := memcache.New(memcachedServer)
+	cache := &data.Cache{Client: mc}
+
 	var providers = []cloudprovider.Provider{
 		cloudprovider.Provider{
 			ProviderName: "DO",
@@ -43,7 +45,7 @@ func Scan() {
 
 	//ip outliers and service change channels
 	ipOutliers := make(chan cloudprovider.Outlier, len(providers))
-	serviceChanges := make(chan netscan.ServiceChanges, len(providers))
+	serviceChanges := make(chan nmap.ServiceChanges, len(providers))
 
 	//change alert channels
 	ipChangeAlerts := make(chan notifier.EmailAlert, len(providers))
@@ -56,14 +58,14 @@ func Scan() {
 	serviceChangeAlertCounter := make(chan int)
 
 	//track scanners
-	go netscan.TrackScanners(len(providers), ipOutliers, scanCounter)
+	go nmap.TrackScanners(len(providers), ipOutliers, scanCounter)
 
 	//track ip change alerts
 	go notifier.TrackIPChangeAlerts(len(providers), ipChangeAlerts, ipAlertCounter)
 
 	//recieve and scan outliers sent from baseliner
 	swg.Add(1)
-	go netscan.RecieveAndScanOutliers(&swg, ipOutliers, serviceChanges, scanCounter, mc)
+	go nmap.RecieveAndScanOutliers(&swg, ipOutliers, serviceChanges, scanCounter)
 
 	//send IP change alerts from baseliner
 	swg.Add(1)
@@ -72,7 +74,7 @@ func Scan() {
 	//check for IP changes
 	for _, p := range providers {
 		swg.Add(1)
-		go checkIPChanges(mc, p, &swg, ipOutliers, ipChangeAlerts)
+		go checkIPChanges(cache, p, &swg, ipOutliers, ipChangeAlerts)
 	}
 
 	//track change alerts from baseliner
@@ -86,7 +88,7 @@ func Scan() {
 	go notifier.SendServiceChangeAlerts(&swg, serviceChangeAlerts, serviceChangeAlertCounter)
 
 	//check for service baseline changes
-	go baseliner.CheckServiceBaselineChanges(serviceChangeAlerts, serviceChanges, serviceChangesCounter, mc)
+	go baseliner.CheckServiceBaselineChanges(serviceChangeAlerts, serviceChanges, serviceChangesCounter, cache)
 
 	swg.Wait()
 
@@ -100,7 +102,7 @@ func Invalidate() {
 	}
 }
 
-func checkIPChanges(mc *memcache.Client, provider cloudprovider.Provider, wg *sync.WaitGroup, outliers chan cloudprovider.Outlier, alerts chan notifier.EmailAlert) {
+func checkIPChanges(mc *data.Cache, provider cloudprovider.Provider, wg *sync.WaitGroup, outliers chan cloudprovider.Outlier, alerts chan notifier.EmailAlert) {
 	defer wg.Done()
 	baseliner.CheckIPBaselineChange(&provider, outliers, alerts, mc)
 }
